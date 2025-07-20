@@ -1,33 +1,20 @@
-import { useState, useEffect } from "react";
 import LoginPage from "./pages/Login";
 import Chat from "./pages/Chat";
+import { useAuth } from "./context/AuthContext";
 
 function App() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const username = localStorage.getItem("username");
-    const serverIp = localStorage.getItem("server_ip");
-
-    if (username && serverIp) {
-      setUser({ username, serverIp });
-    } else {
-      setUser(null);
-    }
-  }, []); // فقط یک‌بار بعد از mount اجرا می‌شه
+  const { login, username, serverIp } = useAuth();
 
   const handleLogin = ({ username, serverIp }) => {
-    localStorage.setItem("username", username);
-    localStorage.setItem("server_ip", serverIp);
-    setUser({ username, serverIp });
+    login(username, serverIp);
   };
 
   return (
     <>
-      {!user ? (
+      {!username ? (
         <LoginPage onLogin={handleLogin} />
       ) : (
-        <Chat username={user.username} serverIp={user.serverIp} />
+        <Chat username={username} serverIp={serverIp} />
       )}
     </>
   );

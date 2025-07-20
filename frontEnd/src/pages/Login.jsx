@@ -7,8 +7,6 @@ function LoginPage({ onLogin }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (username.trim() && serverIp.trim()) {
-      localStorage.setItem("username", username);
-      localStorage.setItem("server_ip", serverIp);
       onLogin({ username, serverIp });
     }
   };
@@ -33,7 +31,7 @@ function LoginPage({ onLogin }) {
 
         <input
           type="text"
-          placeholder="Enter server IP (e.g. http://192.168.1.10:3000)"
+          placeholder="Enter server IP (e.g. 192.168.1.10)"
           className="w-full border border-blue-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
           value={serverIp}
           onChange={(e) => setServerIp(e.target.value)}

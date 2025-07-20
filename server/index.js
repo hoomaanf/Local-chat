@@ -1,8 +1,10 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-
 const app = express();
+const cors = require("cors");
+app.use(cors());
+
 app.use(express.json());
 
 const DATA_FILE = path.join(__dirname, "messages.json");
@@ -37,12 +39,27 @@ app.post("/api/message", (req, res) => {
     username,
     text,
     time: new Date().toTimeString().split(" ")[0],
+    date: new Date().toLocaleDateString(),
   };
   messages.push(newMessage);
   saveMessages(messages);
 
   res.status(201).json(newMessage);
 });
+
+app.delete("/api/message/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  if (!id) return res.status(400).json({ error: "invalid id" });
+
+  let messages = loadMessages();
+  const index = messages.findIndex((msg) => msg.id === id);
+  if (index === -1) return res.status(404).json({ error: "message not found" });
+
+  const deleted = messages.splice(index, 1)[0];
+  saveMessages(messages);
+  res.json(deleted);
+});
+
 app.listen(3000, "0.0.0.0", () => {
   console.log("Server running on http://0.0.0.0:3000");
 });
