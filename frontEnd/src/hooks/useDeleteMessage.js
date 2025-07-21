@@ -1,4 +1,4 @@
-async function deleteMessage(id, serverIp) {
+async function useDeleteMessage(id, serverIp) {
   const response = await fetch(`http://${serverIp}:3000/api/message/${id}`, {
     method: "DELETE",
   });
@@ -8,4 +8,4 @@ async function deleteMessage(id, serverIp) {
   return await response.json();
 }
 
-export default deleteMessage;
+export default useDeleteMessage;

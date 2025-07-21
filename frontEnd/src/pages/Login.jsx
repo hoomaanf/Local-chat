@@ -12,19 +12,19 @@ function LoginPage({ onLogin }) {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-100 to-blue-300">
+    <div className="flex items-center justify-center h-dvh bg-gradient-to-br from-gray-900 to-gray-800 text-white">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-2xl shadow-lg space-y-5 w-full max-w-sm"
+        className="bg-gray-900 p-8 rounded-2xl shadow-lg space-y-5 w-full max-w-sm border border-gray-700"
       >
-        <h2 className="text-2xl font-bold text-center text-blue-600">
+        <h2 className="text-2xl font-bold text-center text-blue-400">
           🔐 Login
         </h2>
 
         <input
           type="text"
           placeholder="Enter your username"
-          className="w-full border border-blue-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="w-full bg-gray-800 text-white placeholder-gray-400 border border-gray-600 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
@@ -32,7 +32,7 @@ function LoginPage({ onLogin }) {
         <input
           type="text"
           placeholder="Enter server IP (e.g. 192.168.1.10)"
-          className="w-full border border-blue-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="w-full bg-gray-800 text-white placeholder-gray-400 border border-gray-600 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={serverIp}
           onChange={(e) => setServerIp(e.target.value)}
         />

@@ -1,38 +1,70 @@
-import deleteMessage from "../composables/deleteMessage";
+import useDeleteMessage from "../hooks/useDeleteMessage";
 import { useAuth } from "../context/AuthContext";
 import { toJalaali } from "jalaali-js";
+import trashIco from "../assets/icons/trash.svg";
+import editIco from "../assets/icons/edit.svg";
+import copyIco from "../assets/icons/copy.svg";
+import replyIco from "../assets/icons/reply.svg";
 
 function DeleteBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-8  h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition-colors duration-200"
+      className="flex items-center justify-center w-5 h-5 cursor-pointer"
       title="Delete message"
       aria-label="Delete message"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-5 h-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M19 7L5 7M10 11L10 17M14 11L14 17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 7V4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7"
-        />
-      </svg>
+      <img src={trashIco} alt="Delete message" />
+    </button>
+  );
+}
+function EditBtn({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center justify-center w-6 h-6 cursor-pointer"
+      title="Edit message"
+      aria-label="Edit message"
+    >
+      <img src={editIco} alt="Edit message" />
+    </button>
+  );
+}
+function CopyBtn({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center justify-center w-5 h-5 cursor-pointer"
+      title="Copy message"
+      aria-label="Copy message"
+    >
+      <img src={copyIco} alt="Copy message" />
+    </button>
+  );
+}
+function ReplyBtn({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center justify-center w-4 h-4 cursor-pointer"
+      title="Reply to message"
+      aria-label="Reply to message"
+    >
+      <img src={replyIco} alt="Reply to message" />
     </button>
   );
 }
 
-function UserMessage({ user }) {
+function UserMessage({ user, editFunction, handleReplyClick }) {
   const { serverIp } = useAuth();
-  const handleDeleteClick = async (e) => {
-    await deleteMessage(user.id, serverIp);
-    e.preventDefault();
+  const handleDeleteClick = async () => {
+    await useDeleteMessage(user.id, serverIp);
+  };
+  const handleEditClick = async () => {
+    editFunction(user.id);
+  };
+  const handleCopyClick = () => {
+    navigator.clipboard.writeText(user.text);
   };
   const jDate = toJalaali(new Date(user.date));
 
@@ -41,10 +73,17 @@ function UserMessage({ user }) {
       <div className="bg-gray-600 text-white p-3 rounded-xl shadow-lg flex-grow">
         <div className="text-sm font-semibold">YOU</div>
         <div className="text-base mt-1">{user.text}</div>
-        <div className="text-xs text-right text-blue-200 mt-1 flex flex-row-reverse gap-4 items-center justify-between">
-          <p>{user.time}</p>
-          <p>{`${jDate.jy}/${jDate.jm}/${jDate.jd}`}</p>
-          <DeleteBtn onClick={handleDeleteClick} />
+        <div className="text-xs text-right text-blue-200 mt-1 flex flex-row-reverse gap-8 justify-between items-center">
+          <div className="flex gap-2 items-center">
+            <p>{user.time}</p>
+            <p>{`${jDate.jy}/${jDate.jm}/${jDate.jd}`}</p>
+          </div>
+          <div className="flex gap-1 items-center">
+            <DeleteBtn onClick={handleDeleteClick} />
+            <EditBtn onClick={handleEditClick} />
+            <CopyBtn onClick={handleCopyClick} />
+            <ReplyBtn onClick={() => handleReplyClick(user)} />
+          </div>
         </div>
       </div>
     </div>
