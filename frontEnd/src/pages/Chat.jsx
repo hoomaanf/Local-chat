@@ -13,6 +13,10 @@ function Chat() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [messageToEdit, setMessageToEdit] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
+  const [newMessages, setNewMessages] = useState([]);
+
+  const [isPageVisible, setIsPageVisible] = useState(true);
+  const [lastSeenMessageId, setLastSeenMessageId] = useState(null);
 
   const handleScroll = () => {
     const container = messagesContainerRef.current;
@@ -25,13 +29,18 @@ function Chat() {
     setIsAtBottom(position < threshold);
   };
 
+  const scrollBottom = () =>
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+
   useEffect(() => {
     const fetchMessages = async () => {
       try {
         const res = await fetch(`http://${serverIp}:3000/api/messages`);
         const data = await res.json();
         setMessages(data);
-      } catch (err) {}
+      } catch (err) {
+        console.error("خطا در دریافت پیام‌ها", err);
+      }
     };
 
     fetchMessages();
@@ -51,7 +60,7 @@ function Chat() {
 
   useEffect(() => {
     if (isAtBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      scrollBottom();
     }
   }, [messages, isAtBottom]);
 
@@ -62,11 +71,65 @@ function Chat() {
     }
   };
 
-  const handleReplyClick = (message) => {
-    console.log(message);
+  const showNotification = (title, body) => {
+    if (Notification.permission === "granted") {
+      new Notification(title, {
+        body,
+        icon: chatIco,
+      });
+    }
+  };
 
+  const handleReplyClick = (message) => {
     setReplyTo(message);
   };
+
+  const playNotificationSound = () => {
+    const audio = new Audio("/sounds/notification.mp3");
+    audio.play();
+  };
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const visible = !document.hidden;
+      setIsPageVisible(visible);
+
+      if (visible && isAtBottom && messages.length > 0) {
+        const lastMsg = messages[messages.length - 1];
+        setLastSeenMessageId(lastMsg.id);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [messages, isAtBottom]);
+
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isPageVisible && messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+
+      if (lastMsg.id !== lastSeenMessageId) {
+        setNewMessages((prev) => {
+          const alreadyExists = prev.some((msg) => msg.id === lastMsg.id);
+          if (alreadyExists) return prev;
+          return [...prev, lastMsg];
+        });
+
+        setLastSeenMessageId(lastMsg.id);
+
+        if (lastMsg.username !== username) {
+          showNotification("New Message", lastMsg.text);
+        }
+      }
+    }
+  }, [messages, isPageVisible, lastSeenMessageId]);
 
   return (
     <div className="flex flex-col h-dvh bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100">
@@ -86,12 +149,14 @@ function Chat() {
               user={msg}
               editFunction={handleEditClick}
               handleReplyClick={handleReplyClick}
+              allMessages={messages}
             />
           ) : (
             <MembersMessage
               key={msg.id}
               member={msg}
               handleReplyClick={handleReplyClick}
+              allMessages={messages}
             />
           )
         )}
@@ -100,7 +165,7 @@ function Chat() {
 
       <div className="p-4 bg-gray-900 shadow-inner border-t border-gray-700">
         <MessageInput
-          scrollBottom={handleScroll}
+          scrollBottom={scrollBottom}
           messageToEdit={messageToEdit}
           setReplyTo={setReplyTo}
           replyTo={replyTo}

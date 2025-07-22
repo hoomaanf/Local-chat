@@ -55,8 +55,9 @@ function ReplyBtn({ onClick }) {
   );
 }
 
-function UserMessage({ user, editFunction, handleReplyClick }) {
+function UserMessage({ user, editFunction, handleReplyClick, allMessages }) {
   const { serverIp } = useAuth();
+
   const handleDeleteClick = async () => {
     await useDeleteMessage(user.id, serverIp);
   };
@@ -68,11 +69,44 @@ function UserMessage({ user, editFunction, handleReplyClick }) {
   };
   const jDate = toJalaali(new Date(user.date));
 
+  const repliedMessage = user.replyToId
+    ? allMessages.find((msg) => msg.id === user.replyToId)
+    : null;
+
+  const scrollToMessage = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      el.classList.add("highlight-flash");
+
+      setTimeout(() => {
+        el.classList.remove("highlight-flash");
+      }, 1500);
+    }
+  };
+
   return (
     <div className="flex justify-end max-w-fit ml-auto message-item">
-      <div className="bg-gray-600 text-white p-3 rounded-xl shadow-lg flex-grow">
+      <div
+        className="bg-gray-600 text-white p-3 rounded-xl shadow-lg flex-grow max-w-md"
+        id={user.id}
+      >
         <div className="text-sm font-semibold">YOU</div>
-        <div className="text-base mt-1">{user.text}</div>
+        {repliedMessage && (
+          <div
+            className="bg-gray-500/40 border-r-4 border-blue-400 pr-2 pl-3 py-1 mb-2 rounded text-sm text-blue-100 max-w-xs cursor-pointer"
+            onClick={() => scrollToMessage(repliedMessage.id)}
+          >
+            <span className="block font-semibold text-blue-200 mb-1">
+              Replying to {repliedMessage.username}:
+            </span>
+            <span className="line-clamp-2">{repliedMessage.text}</span>
+          </div>
+        )}
+
+        <div className="text-base mt-1 whitespace-pre-wrap">{user.text}</div>
+
         <div className="text-xs text-right text-blue-200 mt-1 flex flex-row-reverse gap-8 justify-between items-center">
           <div className="flex gap-2 items-center">
             <p>{user.time}</p>

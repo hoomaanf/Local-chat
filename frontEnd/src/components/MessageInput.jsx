@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import sendIco from "../assets/icons/send.svg";
+import closeIco from "../assets/icons/close.svg";
 
 function MessageInput({ scrollBottom, messageToEdit, setReplyTo, replyTo }) {
   const { username, serverIp } = useAuth();
@@ -37,7 +38,7 @@ function MessageInput({ scrollBottom, messageToEdit, setReplyTo, replyTo }) {
         sendMessageToServer(text, replyTo?.id || null);
       }
       setText("");
-      setReplyTo(null); // پاک کردن ریپلای پس از ارسال
+      setReplyTo(null);
       resizeTextarea();
       textInputRef.current.focus();
       scrollBottom();
@@ -63,6 +64,14 @@ function MessageInput({ scrollBottom, messageToEdit, setReplyTo, replyTo }) {
     }
   }, [messageToEdit]);
 
+  useEffect(() => {
+    if (replyTo) {
+      setText("");
+      setIsEditing(false);
+      textInputRef.current.focus();
+    }
+  }, [replyTo]);
+
   return (
     <div className="flex flex-col gap-2">
       {replyTo && (
@@ -78,7 +87,7 @@ function MessageInput({ scrollBottom, messageToEdit, setReplyTo, replyTo }) {
             className="text-red-400 hover:text-red-600 ml-2"
             title="Cancel Reply"
           >
-            ✕
+            <img src={closeIco} alt="closeIco" className="w-6 cursor-pointer" />
           </button>
         </div>
       )}
@@ -96,6 +105,10 @@ function MessageInput({ scrollBottom, messageToEdit, setReplyTo, replyTo }) {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               handleSend();
+            } else if (e.key === "Escape") {
+              setIsEditing(false);
+              setReplyTo(null);
+              textInputRef.current.focus();
             }
           }}
           style={{ maxHeight: "150px" }}
