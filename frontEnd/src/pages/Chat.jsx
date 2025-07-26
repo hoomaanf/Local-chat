@@ -39,7 +39,7 @@ function Chat() {
         const data = await res.json();
         setMessages(data);
       } catch (err) {
-        console.error("خطا در دریافت پیام‌ها", err);
+        console.error("error fetch messages", err);
       }
     };
 
