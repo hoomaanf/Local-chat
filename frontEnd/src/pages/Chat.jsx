@@ -84,11 +84,6 @@ function Chat() {
     setReplyTo(message);
   };
 
-  const playNotificationSound = () => {
-    const audio = new Audio("/sounds/notification.mp3");
-    audio.play();
-  };
-
   useEffect(() => {
     const handleVisibilityChange = () => {
       const visible = !document.hidden;
