@@ -142,16 +142,18 @@ function Chat() {
             <UserMessage
               key={msg.id}
               user={msg}
+              allMessages={messages}
+              serverIp={serverIp}
               editFunction={handleEditClick}
               handleReplyClick={handleReplyClick}
-              allMessages={messages}
             />
           ) : (
             <MembersMessage
               key={msg.id}
               member={msg}
-              handleReplyClick={handleReplyClick}
               allMessages={messages}
+              handleReplyClick={handleReplyClick}
+              serverIp={serverIp}
             />
           )
         )}

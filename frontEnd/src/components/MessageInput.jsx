@@ -2,46 +2,110 @@ import { useRef, useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import sendIco from "../assets/icons/send.svg";
 import closeIco from "../assets/icons/close.svg";
+import attachIco from "../assets/icons/attach.svg";
 
 function MessageInput({ scrollBottom, messageToEdit, setReplyTo, replyTo }) {
   const { username, serverIp } = useAuth();
   const [text, setText] = useState("");
+  const [file, setFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const textInputRef = useRef(null);
 
-  const sendMessageToServer = (message, replyToId = null) => {
-    fetch(`http://${serverIp}:3000/api/message`, {
+  const uploadFile = (file) => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append("file", file);
+
+      xhr.open("POST", `http://${serverIp}:3000/api/upload`);
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percent);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          setUploadProgress(0);
+          const res = JSON.parse(xhr.responseText);
+          resolve(res.url);
+        } else {
+          setUploadProgress(0);
+          reject(new Error("File upload failed"));
+        }
+      };
+
+      xhr.onerror = () => {
+        setUploadProgress(0);
+        reject(new Error("Network error"));
+      };
+
+      xhr.send(formData);
+    });
+  };
+
+  const sendMessage = async (messageText, fileUrl = null) => {
+    const body = {
+      username,
+      text: messageText,
+      replyToId: replyTo?.id || null,
+    };
+    if (fileUrl) {
+      body.fileUrl = fileUrl;
+    }
+
+    const res = await fetch(`http://${serverIp}:3000/api/message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username,
-        text: message,
-        replyToId,
-      }),
+      body: JSON.stringify(body),
     });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Send message failed");
+    }
   };
 
-  const sendEditedMessageToServer = (message) => {
-    fetch(`http://${serverIp}:3000/api/message/${message.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: message.text }),
-    });
+  const sendEditedMessageToServer = async () => {
+    const res = await fetch(
+      `http://${serverIp}:3000/api/message/${messageToEdit.id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      }
+    );
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Edit message failed");
+    }
   };
 
-  const handleSend = () => {
-    if (text.trim()) {
+  const handleSend = async () => {
+    if (!text.trim() && !file) return;
+
+    try {
       if (isEditing) {
-        sendEditedMessageToServer({ id: messageToEdit.id, text });
+        await sendEditedMessageToServer();
         setIsEditing(false);
       } else {
-        sendMessageToServer(text, replyTo?.id || null);
+        let fileUrl = null;
+        if (file) {
+          fileUrl = await uploadFile(file);
+        }
+        await sendMessage(text, fileUrl);
       }
+
       setText("");
+      setFile(null);
       setReplyTo(null);
       resizeTextarea();
       textInputRef.current.focus();
       scrollBottom();
+    } catch (error) {
+      alert(error.message);
     }
   };
 
@@ -52,9 +116,7 @@ function MessageInput({ scrollBottom, messageToEdit, setReplyTo, replyTo }) {
     el.style.height = Math.min(el.scrollHeight, 150) + "px";
   };
 
-  useEffect(() => {
-    resizeTextarea();
-  }, [text]);
+  useEffect(() => resizeTextarea(), [text]);
 
   useEffect(() => {
     if (messageToEdit) {
@@ -92,13 +154,26 @@ function MessageInput({ scrollBottom, messageToEdit, setReplyTo, replyTo }) {
         </div>
       )}
 
-      <div className="flex items-end gap-3 p-3 bg-gray-900 border border-gray-700 rounded-2xl shadow-xl">
+      <div>
+        {uploadProgress > 0 && (
+          <div className="w-full bg-gray-700 rounded h-5 mt-2 relative overflow-hidden">
+            <div
+              className="bg-blue-500 h-full rounded transition-all duration-300"
+              style={{ width: `${uploadProgress}%` }}
+            />
+            <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold select-none">
+              {uploadProgress}%
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="flex items-end gap-3 p-3 bg-gray-900 border border-gray-700 rounded-2xl shadow-xl relative">
         <textarea
           ref={textInputRef}
           autoFocus
           rows={1}
           className="flex-1 overflow-y-scroll no-scrollbar bg-gray-800 text-white placeholder-gray-400 border-none rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition-all duration-200 overflow-hidden"
-          placeholder="Write Your Message..."
+          placeholder="Write your message or attach a file..."
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
@@ -113,6 +188,22 @@ function MessageInput({ scrollBottom, messageToEdit, setReplyTo, replyTo }) {
           }}
           style={{ maxHeight: "150px" }}
         />
+
+        <input
+          type="file"
+          id="fileUpload"
+          onChange={(e) => setFile(e.target.files[0])}
+          className="hidden"
+        />
+        <label htmlFor="fileUpload" className="cursor-pointer text-white mr-2">
+          <img
+            src={attachIco}
+            alt="Attach"
+            className="w-10"
+            title="Attach file"
+          />
+        </label>
+
         <button
           onClick={handleSend}
           className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full transition duration-200 shadow-md cursor-pointer"
@@ -120,6 +211,12 @@ function MessageInput({ scrollBottom, messageToEdit, setReplyTo, replyTo }) {
           <img src={sendIco} alt="Send" className="w-6" />
         </button>
       </div>
+
+      {file && (
+        <div className="text-xs text-gray-300 px-2">
+          Attached: <strong>{file.name}</strong>
+        </div>
+      )}
     </div>
   );
 }

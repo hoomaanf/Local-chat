@@ -1,5 +1,6 @@
 import { toJalaali } from "jalaali-js";
 import replyIco from "../assets/icons/reply.svg";
+import useRenderFile from "../hooks/useRenderFile";
 
 function ReplyBtn({ onClick }) {
   return (
@@ -9,12 +10,12 @@ function ReplyBtn({ onClick }) {
       title="Reply to message"
       aria-label="Reply to message"
     >
-      <img src={replyIco} alt="Reply to message" className="text-rose-50" />
+      <img src={replyIco} alt="Reply to message" />
     </button>
   );
 }
 
-function MembersMessage({ member, handleReplyClick, allMessages }) {
+function MembersMessage({ member, handleReplyClick, allMessages, serverIp }) {
   const jDate = toJalaali(new Date(member.date));
   const repliedMessage = member.replyToId
     ? allMessages.find((msg) => msg.id === member.replyToId)
@@ -24,22 +25,18 @@ function MembersMessage({ member, handleReplyClick, allMessages }) {
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-
       el.classList.add("highlight-flash");
-
-      setTimeout(() => {
-        el.classList.remove("highlight-flash");
-      }, 1500);
+      setTimeout(() => el.classList.remove("highlight-flash"), 1500);
     }
   };
 
   return (
-    <div className="flex justify-start message-item ">
+    <div className="flex justify-start message-item">
       <div
-        className="bg-[#2b5378] text-white p-3 rounded-xl max-w-sm shadow-md border border-blue-100"
+        className="bg-[#2b5378] text-white p-3 rounded-xl max-w-lg shadow-md border border-blue-100"
         id={member.id}
       >
-        <div className="text-sm font-semibold ">{member.username}</div>
+        <div className="text-sm font-semibold">{member.username}</div>
 
         {repliedMessage && (
           <div
@@ -51,7 +48,9 @@ function MembersMessage({ member, handleReplyClick, allMessages }) {
           </div>
         )}
 
+        {useRenderFile(member.fileUrl, serverIp)}
         <div className="text-base mt-1 whitespace-pre-wrap">{member.text}</div>
+
         <div className="text-xs text-gray-100 mt-1 gap-2 flex items-center justify-between">
           <div className="flex gap-2 items-center">
             <p>{member.time}</p>
