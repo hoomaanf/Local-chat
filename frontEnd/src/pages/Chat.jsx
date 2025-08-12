@@ -120,7 +120,7 @@ function Chat() {
         setLastSeenMessageId(lastMsg.id);
 
         if (lastMsg.username !== username) {
-          showNotification("New Message", lastMsg.text);
+          showNotification(lastMsg.username, lastMsg.text);
         }
       }
     }

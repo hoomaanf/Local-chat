@@ -49,7 +49,13 @@ function MembersMessage({ member, handleReplyClick, allMessages, serverIp }) {
         )}
 
         {useRenderFile(member.fileUrl, serverIp)}
-        <div className="text-base mt-1 whitespace-pre-wrap">{member.text}</div>
+        <div className="text-base mt-1 whitespace-pre-wrap">
+          {member.text.includes("http") ? (
+            <a href={member.text} target="_blank">{member.text}</a>
+          ) : (
+            member.text
+          )}
+        </div>
 
         <div className="text-xs text-gray-100 mt-1 gap-2 flex items-center justify-between">
           <div className="flex gap-2 items-center">

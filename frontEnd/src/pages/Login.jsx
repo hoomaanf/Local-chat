@@ -1,14 +1,56 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function LoginPage({ onLogin }) {
   const [username, setUsername] = useState("");
   const [serverIp, setServerIp] = useState("");
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const loginRequest = async (uname, ip, file = null) => {
+    const formData = new FormData();
+    formData.append("username", uname);
+    if (file) formData.append("profile", file);
+
+    setLoading(true);
+    try {
+      const res = await fetch(`http://${ip}:3000/api/login`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("username", uname);
+        localStorage.setItem("serverIp", ip);
+        onLogin({
+          username: data.username,
+          serverIp: ip,
+          profileUrl: data.profileUrl,
+        });
+      } else {
+        alert(data.error || "Login failed");
+      }
+    } catch (err) {
+      alert("Connection error");
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const savedUsername = localStorage.getItem("username");
+    const savedServerIp = localStorage.getItem("serverIp");
+
+    if (savedUsername && savedServerIp) {
+      loginRequest(savedUsername, savedServerIp);
+    } else {
+      if (savedUsername) setUsername(savedUsername);
+      if (savedServerIp) setServerIp(savedServerIp);
+    }
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (username.trim() && serverIp.trim()) {
-      onLogin({ username, serverIp });
-    }
+    if (!username.trim() || !serverIp.trim()) return;
+    loginRequest(username, serverIp, profile);
   };
 
   return (
@@ -37,11 +79,19 @@ function LoginPage({ onLogin }) {
           onChange={(e) => setServerIp(e.target.value)}
         />
 
+        <input
+          type="file"
+          accept="image/*"
+          className="w-full bg-gray-800 text-white border border-gray-600 rounded-xl p-2 file:bg-gray-700 file:text-white file:border-0 file:px-3 file:py-1 file:rounded-lg file:hover:bg-gray-600"
+          onChange={(e) => setProfile(e.target.files[0])}
+        />
+
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
         >
-          Start Chatting
+          {loading ? "Logging in..." : "Start Chatting"}
         </button>
       </form>
     </div>

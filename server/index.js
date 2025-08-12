@@ -9,19 +9,16 @@ app.use(cors());
 app.use(express.json());
 
 const DATA_FILE = path.join(__dirname, "messages.json");
+const USERS_FILE = path.join(__dirname, "users.json");
 const UPLOADS_DIR = path.join(__dirname, "uploads");
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
+const PROFILE_DIR = path.join(UPLOADS_DIR, "profiles");
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename: (req, file, cb) => cb(null, Date.now() + "_" + file.originalname),
-});
-const upload = multer({ storage, limits: { fileSize: 100 * 1024 * 1024 } });
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
+if (!fs.existsSync(PROFILE_DIR)) fs.mkdirSync(PROFILE_DIR);
 
 function loadMessages() {
   try {
-    const data = fs.readFileSync(DATA_FILE, "utf-8");
-    return JSON.parse(data);
+    return JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
   } catch {
     return [];
   }
@@ -31,43 +28,77 @@ function saveMessages(messages) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(messages, null, 2));
 }
 
+function loadUsers() {
+  try {
+    return JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
+  } catch {
+    return [];
+  }
+}
+
+function saveUsers(users) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+}
+
+// Multer setup for profile uploads
+const profileStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, PROFILE_DIR),
+  filename: (req, file, cb) => {
+    const username = req.body.username;
+    const ext = path.extname(file.originalname);
+    cb(null, username + ext);
+  },
+});
+const uploadProfile = multer({ storage: profileStorage });
+
 // Serve uploaded files statically
 app.use("/uploads", express.static(UPLOADS_DIR));
 
-// Ping
-app.get("/api/ping", (req, res) => {
-  res.status(200).json({ message: "pong" });
-});
+// Login with profile upload
+app.post("/api/login", uploadProfile.single("profile"), (req, res) => {
+  const { username } = req.body;
+  if (!username || username.trim() === "") {
+    return res.status(400).json({ error: "Username is required" });
+  }
 
-// Get all messages
-app.get("/api/messages", (req, res) => {
-  const messages = loadMessages();
-  res.json(messages);
-});
+  let users = loadUsers();
+  let profileUrl = null;
 
-// Upload file
-app.post("/api/upload", (req, res) => {
-  upload.single("file")(req, res, (err) => {
-    if (err) {
-      if (err.code === "LIMIT_FILE_SIZE") {
-        return res.status(400).json({ error: "File size exceeds 100MB limit" });
-      }
-      return res.status(500).json({ error: "File upload error" });
-    }
-    if (!req.file) {
-      return res.status(400).json({ error: "File not provided" });
-    }
+  if (req.file) {
     const protocol = req.protocol;
     const host = req.get("host");
-    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
-    res.json({ url: fileUrl });
-  });
+    profileUrl = `${protocol}://${host}/uploads/profiles/${req.file.filename}`;
+  } else {
+    const existingUser = users.find((u) => u.username === username);
+    profileUrl = existingUser ? existingUser.profileUrl : null;
+  }
+
+  // Update or add user
+  const existingIndex = users.findIndex((u) => u.username === username);
+  if (existingIndex > -1) {
+    users[existingIndex].profileUrl = profileUrl;
+  } else {
+    users.push({ username, profileUrl });
+  }
+  saveUsers(users);
+
+  res.json({ username, profileUrl });
 });
 
-// Post message with optional fileUrl
+// Get all messages with profile URLs
+app.get("/api/messages", (req, res) => {
+  const messages = loadMessages();
+  const users = loadUsers();
+  const messagesWithProfiles = messages.map((msg) => {
+    const user = users.find((u) => u.username === msg.username);
+    return { ...msg, profileUrl: user ? user.profileUrl : null };
+  });
+  res.json(messagesWithProfiles);
+});
+
+// Post message
 app.post("/api/message", (req, res) => {
   const { username, text, replyToId, fileUrl } = req.body;
-
   if (!username || (!text && !fileUrl)) {
     return res
       .status(400)
@@ -90,54 +121,6 @@ app.post("/api/message", (req, res) => {
   res.status(201).json(newMessage);
 });
 
-// Edit a message
-app.put("/api/message/:id", (req, res) => {
-  const { text } = req.body;
-  const id = parseInt(req.params.id);
-
-  if (!text || !id) {
-    return res.status(400).json({ error: "text and id are required" });
-  }
-
-  const messages = loadMessages();
-  const messageIndex = messages.findIndex((msg) => msg.id === id);
-  if (messageIndex === -1) {
-    return res.status(404).json({ error: "message not found" });
-  }
-
-  messages[messageIndex].text = text;
-  saveMessages(messages);
-  res.json(messages[messageIndex]);
-});
-
-// Delete a message
-app.delete("/api/message/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  if (!id) return res.status(400).json({ error: "invalid id" });
-
-  let messages = loadMessages();
-  const index = messages.findIndex((msg) => msg.id === id);
-  if (index === -1) return res.status(404).json({ error: "message not found" });
-
-  const deleted = messages.splice(index, 1)[0];
-
-  if (deleted.fileUrl) {
-    try {
-      const fileName = path.basename(deleted.fileUrl);
-      const filePath = path.join(UPLOADS_DIR, fileName);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    } catch (error) {
-      console.error("Failed to delete file:", error);
-    }
-  }
-
-  saveMessages(messages);
-  res.json(deleted);
-});
-
-// Start Server
 app.listen(3000, "0.0.0.0", () => {
   console.log("✅ Server running on http://0.0.0.0:3000");
 });

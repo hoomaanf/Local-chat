@@ -88,7 +88,12 @@ function UserMessage({
   };
 
   return (
-    <div className="flex justify-end max-w-fit ml-auto message-item">
+    <div className="flex justify-end max-w-fit ml-auto flex-row-reverse items-end gap-2 message-item">
+      <img
+        src={user.profileUrl}
+        alt={user.username}
+        className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400"
+      />
       <div
         className="bg-gray-600 text-white p-3 rounded-xl shadow-lg flex-grow max-w-lg"
         id={user.id}
@@ -108,7 +113,15 @@ function UserMessage({
         )}
 
         {useRenderFile(user.fileUrl, serverIp || ip)}
-        <div className="text-base mt-1 whitespace-pre-wrap">{user.text}</div>
+        <div className="text-base mt-1 whitespace-pre-wrap">
+          {user.text.includes("http") ? (
+            <a href={user.text} target="_blank">
+              {user.text}
+            </a>
+          ) : (
+            user.text
+          )}
+        </div>
 
         <div className="text-xs text-right text-blue-200 mt-1 flex flex-row-reverse gap-8 justify-between items-center">
           <div className="flex gap-2 items-center">
