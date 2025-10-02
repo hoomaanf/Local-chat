@@ -31,7 +31,7 @@ function MembersMessage({ member, handleReplyClick, allMessages, serverIp }) {
   };
 
   return (
-    <div className="flex justify-start message-item">
+    <div className="flex justify-start message-item gap-2">
       <img
         src={member.profileUrl}
         alt={member.username}
