@@ -32,6 +32,11 @@ function MembersMessage({ member, handleReplyClick, allMessages, serverIp }) {
 
   return (
     <div className="flex justify-start message-item">
+      <img
+        src={member.profileUrl}
+        alt={member.username}
+        className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400"
+      />
       <div
         className="bg-[#2b5378] text-white p-3 rounded-xl max-w-lg shadow-md border border-blue-100"
         id={member.id}
@@ -51,7 +56,9 @@ function MembersMessage({ member, handleReplyClick, allMessages, serverIp }) {
         {useRenderFile(member.fileUrl, serverIp)}
         <div className="text-base mt-1 whitespace-pre-wrap">
           {member.text.includes("http") ? (
-            <a href={member.text} target="_blank">{member.text}</a>
+            <a href={member.text} target="_blank">
+              {member.text}
+            </a>
           ) : (
             member.text
           )}
