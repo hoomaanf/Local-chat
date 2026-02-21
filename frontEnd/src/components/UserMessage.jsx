@@ -1,4 +1,3 @@
-import useDeleteMessage from "../hooks/useDeleteMessage";
 import { useAuth } from "../context/AuthContext";
 import { toJalaali } from "jalaali-js";
 import trashIco from "../assets/icons/trash.svg";
@@ -6,6 +5,7 @@ import editIco from "../assets/icons/edit.svg";
 import copyIco from "../assets/icons/copy.svg";
 import replyIco from "../assets/icons/reply.svg";
 import useRenderFile from "../hooks/useRenderFile";
+import { useWebSocket } from "../context/WebSocketContext";
 
 function DeleteBtn({ onClick }) {
   return (
@@ -59,6 +59,7 @@ function UserMessage({
   handleReplyClick,
   allMessages,
 }) {
+  const { deleteMessage } = useWebSocket();
   const { serverIp: ip } = useAuth(); // optional if not passed as prop
   const jDate = toJalaali(new Date(user.date));
 
@@ -67,7 +68,7 @@ function UserMessage({
     : null;
 
   const handleDeleteClick = async () => {
-    await useDeleteMessage(user.id, serverIp || ip);
+    await deleteMessage(user.id, serverIp || ip);
   };
 
   const handleEditClick = () => {

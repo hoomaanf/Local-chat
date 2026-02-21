@@ -2,7 +2,7 @@ import LoginPage from "./pages/Login";
 import Chat from "./pages/Chat";
 import Loading from "./components/Loading";
 import { useAuth } from "./context/AuthContext";
-import { useEffect, useState } from "react";
+import { WebSocketProvider } from "./context/WebSocketContext";
 
 function App() {
   const { login, username, serverIp, loading } = useAuth();
@@ -22,7 +22,9 @@ function App() {
           {!username ? (
             <LoginPage onLogin={handleLogin} />
           ) : (
-            <Chat serverIp={serverIp} />
+            <WebSocketProvider>
+              <Chat />
+            </WebSocketProvider>
           )}
         </div>
       )}
