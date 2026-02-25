@@ -8,7 +8,12 @@ import chatIco from "../assets/icons/favico.svg";
 
 function Chat() {
   const { username, serverIp, logout } = useAuth();
-  const { messages, isConnected, logout: wsLogout } = useWebSocket();
+  const {
+    messages,
+    isConnected,
+    logout: wsLogout,
+    onlineUsers,
+  } = useWebSocket();
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -102,7 +107,6 @@ function Chat() {
         }
       }
     }
-    console.log(messages);
   }, [messages, isPageVisible, lastSeenMessageId, username]);
 
   return (
@@ -117,6 +121,9 @@ function Chat() {
               (Connecting...)
             </span>
           )}
+        </div>
+        <div>
+          Online: <span className="text-white">{onlineUsers.length}</span>
         </div>
         <button
           className="text-base text-white font-normal cursor-pointer"
