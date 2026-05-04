@@ -1,6 +1,11 @@
 import { toJalaali } from "jalaali-js";
 import replyIco from "../assets/icons/reply.svg";
+import userIco from "../assets/icons/user.svg";
 import useRenderFile from "../hooks/useRenderFile";
+import ReactionBox from "./ReactionsBox";
+import { useState } from "react";
+import UserReactionBox from "./UserReactionBox";
+import { useAuth } from "../context/AuthContext";
 
 function ReplyBtn({ onClick }) {
   return (
@@ -15,7 +20,16 @@ function ReplyBtn({ onClick }) {
   );
 }
 
-function MembersMessage({ member, handleReplyClick, allMessages, serverIp }) {
+function MembersMessage({
+  member,
+  handleReplyClick,
+  allMessages,
+  serverIp,
+  handleReaction,
+  handleClickReaction,
+}) {
+  const { username } = useAuth();
+  const [showReactionBox, setShowReactionBox] = useState(false);
   const jDate = toJalaali(new Date(member.date));
   const repliedMessage = member.replyToId
     ? allMessages.find((msg) => msg.id === member.replyToId)
@@ -31,12 +45,21 @@ function MembersMessage({ member, handleReplyClick, allMessages, serverIp }) {
   };
 
   return (
-    <div className="flex justify-start message-item gap-2">
-      <img
-        src={member.profileUrl}
-        alt={member.username}
-        className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400"
-      />
+    <div className="flex justify-start message-item gap-2 ">
+      {member.profileUrl ? (
+        <img
+          src={member.profileUrl}
+          alt={member.username}
+          className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400"
+        />
+      ) : (
+        <img
+          src={userIco}
+          alt={member.username}
+          className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400 bg-white"
+        />
+      )}
+
       <div
         className="bg-[#2b5378] text-white p-3 rounded-xl max-w-lg shadow-md border border-blue-100"
         id={member.id}
@@ -45,7 +68,7 @@ function MembersMessage({ member, handleReplyClick, allMessages, serverIp }) {
 
         {repliedMessage && (
           <div
-            className="mb-2 p-2 border-l-4 border-white/40 bg-white/10 rounded text-sm text-white/80 cursor-pointer"
+            className="mb-2 p-2 border-l-4 border-white/40 bg-white/10 rounded text-sm text-white/80 cursor-pointer max-w-72"
             onClick={() => scrollToMessage(repliedMessage.id)}
           >
             <p className="font-semibold">{repliedMessage.username || "..."}</p>
@@ -71,6 +94,36 @@ function MembersMessage({ member, handleReplyClick, allMessages, serverIp }) {
           </div>
           <ReplyBtn onClick={() => handleReplyClick(member)} />
         </div>
+
+        {showReactionBox && (
+          <ReactionBox
+            messageId={member.id}
+            onSelect={(emoji) => {
+              handleReaction({
+                messageId: member.id,
+                reactions: emoji,
+                userReacted: username,
+              });
+
+              setShowReactionBox(false);
+            }}
+          />
+        )}
+        {member.reactions.length ? (
+          <UserReactionBox
+            reactions={member.reactions}
+            selectReact={handleClickReaction}
+            id={member.id}
+          />
+        ) : (
+          <button
+            onClick={() => {
+              setShowReactionBox((prev) => !prev);
+            }}
+          >
+            😀
+          </button>
+        )}
       </div>
     </div>
   );

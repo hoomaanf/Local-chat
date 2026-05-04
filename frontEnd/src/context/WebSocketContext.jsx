@@ -34,7 +34,7 @@ export const WebSocketProvider = ({ children }) => {
       wsRef.current.close();
     }
 
-    const ws = new WebSocket(`ws://${serverIp}:3000`);
+    const ws = new WebSocket(`ws://${serverIp}:4000`);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -77,6 +77,14 @@ export const WebSocketProvider = ({ children }) => {
             break;
 
           case "message_updated":
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === message.data.id ? message.data : msg,
+              ),
+            );
+            break;
+
+          case "react_message":
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === message.data.id ? message.data : msg,
@@ -190,9 +198,18 @@ export const WebSocketProvider = ({ children }) => {
     return false;
   };
 
-  const onNewMessage = (handler) => {
-    messageHandlers.current.add(handler);
-    return () => messageHandlers.current.delete(handler);
+  const handleReaction = (message) => {
+    console.log(message);
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: "react_message",
+          data: message,
+        }),
+      );
+      return true;
+    }
+    return false;
   };
 
   const value = {
@@ -200,10 +217,10 @@ export const WebSocketProvider = ({ children }) => {
     onlineUsers,
     messages,
     sendMessage,
-    onNewMessage,
     deleteMessage,
     logout,
     handleEditMessage,
+    handleReaction,
   };
 
   return (

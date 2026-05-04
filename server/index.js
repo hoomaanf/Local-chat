@@ -82,8 +82,6 @@ app.use("/uploads", express.static(UPLOADS_DIR));
 // ==================== WebSocket Handlers ====================
 
 wss.on("connection", (ws, req) => {
-  console.log("✅ New WebSocket connection");
-
   // ارسال پیام‌های قبلی به کاربر جدید
   const messages = loadMessages();
   const users = loadUsers();
@@ -113,6 +111,9 @@ wss.on("connection", (ws, req) => {
           break;
         case "edit_message":
           handleEditMessage(ws, message.data);
+          break;
+        case "react_message":
+          handleReaction(message.data);
           break;
         case "delete_message":
           handleDeleteMessage(ws, message.data);
@@ -172,6 +173,12 @@ function handleNewMessage(ws, data) {
     time: new Date().toTimeString().split(" ")[0],
     date: new Date().toLocaleDateString(),
     replyToId: replyToId || null,
+    reactions: [
+      // {
+      //   user: null,
+      //   reactions: [],
+      // },
+    ],
   };
 
   messages.push(newMessage);
@@ -192,10 +199,44 @@ function handleNewMessage(ws, data) {
     data: messageWithProfile,
   });
 }
+function handleReaction(data) {
+  const { userReacted, messageId, reactions } = data;
+  if (!userReacted || !reactions.length || !messageId) return;
+
+  const messages = loadMessages();
+  const messageIndex = messages.findIndex((m) => m.id === messageId);
+
+  if (messageIndex > -1) {
+    const reactedMessage = messages[messageIndex].reactions.find(
+      (react) => react.user == userReacted,
+    );
+    if (reactedMessage) {
+      const removedReactionMessage = messages[messageIndex].reactions.filter(
+        (react) => react.user != reactedMessage.user,
+      );
+      messages[messageIndex].reactions = removedReactionMessage;
+    } else {
+      messages[messageIndex].reactions.push({
+        user: userReacted,
+        reactions: reactions,
+      });
+    }
+    saveMessages(messages);
+
+    const messageReacted = {
+      ...messages[messageIndex],
+    };
+
+    // اینجا باید به همه خبر بدی! 🔥
+    broadcastMessage({
+      type: "react_message", // یه تایپ جدید
+      data: messageReacted,
+    });
+  }
+}
 
 function handleEditMessage(ws, data) {
   const { messageId, text } = data;
-  console.log({ messageId, text });
   const messages = loadMessages();
   const messageIndex = messages.findIndex((m) => m.id === messageId);
 
@@ -221,8 +262,6 @@ function handleEditMessage(ws, data) {
       type: "message_updated", // یه تایپ جدید
       data: messageWithProfile,
     });
-
-    console.log("✅ Message edited and broadcasted:", messageWithProfile);
   }
 }
 function handleDeleteMessage(ws, data) {
@@ -319,7 +358,7 @@ app.get("/api/messages", (req, res) => {
 
 // ==================== شروع سرور ====================
 
-server.listen(3000, "0.0.0.0", () => {
-  console.log("✅ Server running on http://0.0.0.0:3000");
-  console.log("✅ WebSocket server running on ws://0.0.0.0:3000");
+server.listen(4000, "0.0.0.0", () => {
+  console.log("✅ Server running on http://0.0.0.0:4000");
+  console.log("✅ WebSocket server running on ws://0.0.0.0:4000");
 });

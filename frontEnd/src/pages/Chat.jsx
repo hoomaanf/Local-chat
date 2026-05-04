@@ -13,6 +13,7 @@ function Chat() {
     isConnected,
     logout: wsLogout,
     onlineUsers,
+    handleReaction,
   } = useWebSocket();
 
   const messagesEndRef = useRef(null);
@@ -71,6 +72,20 @@ function Chat() {
 
   const handleReplyClick = (message) => {
     setReplyTo(message);
+  };
+
+  const handleClickReaction = (reac) => {
+    console.log(reac);
+    console.log({
+      messageId: reac.id,
+      reactions: reac.react,
+      userReacted: username,
+    });
+    handleReaction({
+      messageId: reac.id,
+      reactions: reac.react,
+      userReacted: username,
+    });
   };
 
   useEffect(() => {
@@ -157,6 +172,8 @@ function Chat() {
               allMessages={messages}
               handleReplyClick={handleReplyClick}
               serverIp={serverIp}
+              handleReaction={handleReaction}
+              handleClickReaction={handleClickReaction}
             />
           ),
         )}

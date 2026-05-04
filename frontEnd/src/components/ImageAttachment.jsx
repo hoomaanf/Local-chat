@@ -17,6 +17,7 @@ function ImageAttachment({ fileUrl, alt = "Image attachment" }) {
       <div className="flex gap-3">
         {/* Download Button */}
         <a
+          target="_blank"
           href={fileUrl}
           download
           className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full"

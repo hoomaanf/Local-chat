@@ -4,6 +4,7 @@ import trashIco from "../assets/icons/trash.svg";
 import editIco from "../assets/icons/edit.svg";
 import copyIco from "../assets/icons/copy.svg";
 import replyIco from "../assets/icons/reply.svg";
+import userIco from "../assets/icons/user.svg";
 import useRenderFile from "../hooks/useRenderFile";
 import { useWebSocket } from "../context/WebSocketContext";
 
@@ -90,11 +91,20 @@ function UserMessage({
 
   return (
     <div className="flex justify-end max-w-fit ml-auto flex-row-reverse items-end gap-2 message-item">
-      <img
-        src={user.profileUrl}
-        alt={user.username}
-        className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400"
-      />
+      {user.profileUrl ? (
+        <img
+          src={user.profileUrl}
+          alt={user.username}
+          className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400"
+        />
+      ) : (
+        <img
+          src={userIco}
+          alt={user.username}
+          className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400 bg-white"
+        />
+      )}
+
       <div
         className="bg-gray-600 text-white p-3 rounded-xl shadow-lg flex-grow max-w-lg"
         id={user.id}
