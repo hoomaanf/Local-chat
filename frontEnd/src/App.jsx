@@ -3,6 +3,7 @@ import Chat from "./pages/Chat";
 import Loading from "./components/Loading";
 import { useAuth } from "./context/AuthContext";
 import { WebSocketProvider } from "./context/WebSocketContext";
+import { VideoCallProvider } from "./context/VideoCallContext";
 
 function App() {
   const { login, username, serverIp, loading } = useAuth();
@@ -23,7 +24,9 @@ function App() {
             <LoginPage onLogin={handleLogin} />
           ) : (
             <WebSocketProvider>
-              <Chat />
+              <VideoCallProvider>
+                <Chat />
+              </VideoCallProvider>
             </WebSocketProvider>
           )}
         </div>

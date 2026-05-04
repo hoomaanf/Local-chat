@@ -34,7 +34,7 @@ export const WebSocketProvider = ({ children }) => {
       wsRef.current.close();
     }
 
-    const ws = new WebSocket(`ws://${serverIp}:4000`);
+    const ws = new WebSocket(`ws://${serverIp}:3000`);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -221,6 +221,9 @@ export const WebSocketProvider = ({ children }) => {
     logout,
     handleEditMessage,
     handleReaction,
+    wsRef,
+    addMessageHandler: (handler) => messageHandlers.current.add(handler),
+    removeMessageHandler: (handler) => messageHandlers.current.delete(handler),
   };
 
   return (

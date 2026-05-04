@@ -55,7 +55,6 @@ function saveUsers(users) {
 
 // ==================== Multer Setup ====================
 
-// مخصوص آپلود عکس پروفایل
 const profileStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, PROFILE_DIR),
   filename: (req, file, cb) => {
@@ -66,7 +65,6 @@ const profileStorage = multer.diskStorage({
 });
 const uploadProfile = multer({ storage: profileStorage });
 
-// مخصوص آپلود فایل‌های پیام
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, FILES_DIR),
   filename: (req, file, cb) => {
@@ -76,13 +74,37 @@ const fileStorage = multer.diskStorage({
 });
 const uploadFile = multer({ storage: fileStorage });
 
-// سرو فایل‌های استاتیک
 app.use("/uploads", express.static(UPLOADS_DIR));
 
 // ==================== WebSocket Handlers ====================
 
+function forwardToUser(username, message) {
+  const targetWs = clients.get(username);
+  if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+    targetWs.send(JSON.stringify(message));
+  }
+}
+
+function broadcastMessage(message) {
+  const messageStr = JSON.stringify(message);
+  clients.forEach((clientWs) => {
+    if (clientWs.readyState === WebSocket.OPEN) {
+      clientWs.send(messageStr);
+    }
+  });
+}
+
+function broadcastUserList() {
+  const onlineUsers = Array.from(clients.keys());
+  broadcastMessage({
+    type: "online_users",
+    data: onlineUsers,
+  });
+}
+
+// ==================== WebSocket Connection ====================
+
 wss.on("connection", (ws, req) => {
-  // ارسال پیام‌های قبلی به کاربر جدید
   const messages = loadMessages();
   const users = loadUsers();
   const messagesWithProfiles = messages.map((msg) => {
@@ -97,7 +119,6 @@ wss.on("connection", (ws, req) => {
     }),
   );
 
-  // دریافت پیام از کلاینت
   ws.on("message", (data) => {
     try {
       const message = JSON.parse(data);
@@ -121,13 +142,44 @@ wss.on("connection", (ws, req) => {
         case "logout":
           handleLogout(ws, message.data);
           break;
+
+        // ========== WebRTC Signaling برای تماس صوتی/تصویری ==========
+        case "call_offer":
+          forwardToUser(message.target, {
+            type: "call_offer",
+            offer: message.offer,
+            from: message.from,
+          });
+          break;
+
+        case "call_answer":
+          forwardToUser(message.target, {
+            type: "call_answer",
+            answer: message.answer,
+            from: message.from,
+          });
+          break;
+
+        case "ice_candidate":
+          forwardToUser(message.target, {
+            type: "ice_candidate",
+            candidate: message.candidate,
+            from: message.from,
+          });
+          break;
+
+        case "end_call":
+          forwardToUser(message.target, {
+            type: "end_call",
+            from: message.from,
+          });
+          break;
       }
     } catch (error) {
       console.error("Error processing message:", error);
     }
   });
 
-  // وقتی کاربر قطع میشه
   ws.on("close", () => {
     for (let [username, clientWs] of clients.entries()) {
       if (clientWs === ws) {
@@ -144,10 +196,8 @@ wss.on("connection", (ws, req) => {
 function handleLogin(ws, data) {
   const { username } = data;
 
-  // ذخیره اتصال کاربر
   clients.set(username, ws);
 
-  // تایید لاگین
   ws.send(
     JSON.stringify({
       type: "login_success",
@@ -155,7 +205,6 @@ function handleLogin(ws, data) {
     }),
   );
 
-  // به‌روزرسانی لیست آنلاین برای همه
   broadcastUserList();
 }
 
@@ -173,18 +222,12 @@ function handleNewMessage(ws, data) {
     time: new Date().toTimeString().split(" ")[0],
     date: new Date().toLocaleDateString(),
     replyToId: replyToId || null,
-    reactions: [
-      // {
-      //   user: null,
-      //   reactions: [],
-      // },
-    ],
+    reactions: [],
   };
 
   messages.push(newMessage);
   saveMessages(messages);
 
-  // گرفتن پروفایل کاربر
   const users = loadUsers();
   const user = users.find((u) => u.username === username);
 
@@ -193,12 +236,12 @@ function handleNewMessage(ws, data) {
     profileUrl: user ? user.profileUrl : null,
   };
 
-  // ارسال به همه کاربران آنلاین
   broadcastMessage({
     type: "new_message",
     data: messageWithProfile,
   });
 }
+
 function handleReaction(data) {
   const { userReacted, messageId, reactions } = data;
   if (!userReacted || !reactions.length || !messageId) return;
@@ -227,9 +270,8 @@ function handleReaction(data) {
       ...messages[messageIndex],
     };
 
-    // اینجا باید به همه خبر بدی! 🔥
     broadcastMessage({
-      type: "react_message", // یه تایپ جدید
+      type: "react_message",
       data: messageReacted,
     });
   }
@@ -241,12 +283,10 @@ function handleEditMessage(ws, data) {
   const messageIndex = messages.findIndex((m) => m.id === messageId);
 
   if (messageIndex > -1) {
-    // آپدیت پیام
     messages[messageIndex].text = text;
     messages[messageIndex].edited = true;
     saveMessages(messages);
 
-    // گرفتن پروفایل کاربر
     const users = loadUsers();
     const user = users.find(
       (u) => u.username === messages[messageIndex].username,
@@ -257,13 +297,13 @@ function handleEditMessage(ws, data) {
       profileUrl: user ? user.profileUrl : null,
     };
 
-    // اینجا باید به همه خبر بدی! 🔥
     broadcastMessage({
-      type: "message_updated", // یه تایپ جدید
+      type: "message_updated",
       data: messageWithProfile,
     });
   }
 }
+
 function handleDeleteMessage(ws, data) {
   const { messageId } = data;
 
@@ -283,26 +323,8 @@ function handleLogout(ws, data) {
   broadcastUserList();
 }
 
-function broadcastMessage(message) {
-  const messageStr = JSON.stringify(message);
-  clients.forEach((clientWs) => {
-    if (clientWs.readyState === WebSocket.OPEN) {
-      clientWs.send(messageStr);
-    }
-  });
-}
+// ==================== REST endpoints ====================
 
-function broadcastUserList() {
-  const onlineUsers = Array.from(clients.keys());
-  broadcastMessage({
-    type: "online_users",
-    data: onlineUsers,
-  });
-}
-
-// ==================== REST endpoints (برای آپلود فایل) ====================
-
-// آپلود عکس پروفایل
 app.post("/api/login", uploadProfile.single("profile"), (req, res) => {
   const { username } = req.body;
   if (!username || username.trim() === "") {
@@ -332,7 +354,6 @@ app.post("/api/login", uploadProfile.single("profile"), (req, res) => {
   res.json({ username, profileUrl });
 });
 
-// آپلود فایل برای پیام
 app.post("/api/upload", uploadFile.single("file"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
@@ -345,7 +366,6 @@ app.post("/api/upload", uploadFile.single("file"), (req, res) => {
   res.json({ url: fileUrl });
 });
 
-// دریافت همه پیام‌ها (برای مواقع ضروری - مثلاً وقتی WebSocket وصل نیست)
 app.get("/api/messages", (req, res) => {
   const messages = loadMessages();
   const users = loadUsers();
@@ -358,7 +378,8 @@ app.get("/api/messages", (req, res) => {
 
 // ==================== شروع سرور ====================
 
-server.listen(4000, "0.0.0.0", () => {
-  console.log("✅ Server running on http://0.0.0.0:4000");
-  console.log("✅ WebSocket server running on ws://0.0.0.0:4000");
+server.listen(3000, "0.0.0.0", () => {
+  console.log("✅ Server running on http://0.0.0.0:3000");
+  console.log("✅ WebSocket server running on ws://0.0.0.0:3000");
+  console.log("✅ Video/Audio call signaling ready");
 });

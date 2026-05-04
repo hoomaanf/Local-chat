@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1777911180185,
+    "username": "hoomaan",
+    "text": "f",
+    "fileUrl": null,
+    "time": "19:43:00",
+    "date": "5/4/2026",
+    "replyToId": null,
+    "reactions": []
+  },
+  {
+    "id": 1777911924455,
+    "username": "Abtin",
+    "text": "VideoCallContext.jsx:144 Error starting call: TypeError: Cannot read properties of undefined (reading 'getUserMedia')\n    at startCall (VideoCallContext.jsx:124:51)\n    at onClick (Chat.jsx:146:32)\n",
+    "fileUrl": null,
+    "time": "19:55:24",
+    "date": "5/4/2026",
+    "replyToId": null,
+    "reactions": []
+  },
+  {
+    "id": 1777912061508,
+    "username": "ABTIN",
+    "text": "[vite] connecting... client:733:9\n[vite] connected. client:827:12\nDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools react-dom_client.js:20103:54\nThe Notification permission may only be requested in a secure context. 2 192.168.1.78:5173\n✅ WebSocket connected WebSocketContext.jsx:54:15\n✅ Login successful WebSocketContext.jsx:103:21\n✅ WebSocket connected WebSocketContext.jsx:54:15\n✅ Login successful WebSocketContext.jsx:103:21\nError starting call: TypeError: can't access property \"getUserMedia\", navigator.mediaDevices is undefined\n    startCall VideoCallContext.jsx:124\n    onClick Chat.jsx:146\n    React 8\nVideoCallContext.jsx:142:15\nError starting call: TypeError: can't access property \"getUserMedia\", navigator.mediaDevices is undefined\n    startCall VideoCallContext.jsx:124\n    onClick Chat.jsx:146\n    React 8\nVideoCallContext.jsx:142:15\n",
+    "fileUrl": null,
+    "time": "19:57:41",
+    "date": "5/4/2026",
+    "replyToId": null,
+    "reactions": []
+  },
+  {
+    "id": 1777912076208,
+    "username": "ABTIN",
+    "text": "Error starting call: TypeError: can't access property \"getUserMedia\", navigator.mediaDevices is undefined\n    startCall VideoCallContext.jsx:124\n    onClick Chat.jsx:146\n    React 8\nVideoCallContext.jsx:144:15\n",
+    "fileUrl": null,
+    "time": "19:57:56",
+    "date": "5/4/2026",
+    "replyToId": null,
+    "reactions": []
+  }
+]
