@@ -227,7 +227,6 @@ function handleLogout(ws, data) {
 }
 
 function handlePeerId(ws, data) {
-  console.log("📥 Received peer_id:", data); // ← اینو اضافه کن
   const { username, peerId } = data;
   const existing = clients.get(username);
   if (existing) {
@@ -251,7 +250,6 @@ function broadcastUserList() {
       list.push({ username, peerId: value.peerId || null });
     }
   });
-  console.log({ type: "online_users", data: list });
   broadcastMessage({ type: "online_users", data: list });
 }
 

@@ -115,7 +115,6 @@ export const WebSocketProvider = ({ children }) => {
             break;
 
           case "peer_update":
-            console.log("📢 peer_update:", message.data); // ← اضافه کن
             setOnlineUsers((prev) => {
               const existing = prev.find(
                 (u) => u.username === message.data.username,

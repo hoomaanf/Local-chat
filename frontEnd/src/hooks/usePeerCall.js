@@ -27,7 +27,6 @@ export function usePeerCall(username, serverIp) {
     });
 
     p.on("open", (id) => {
-      console.log("🟢 PeerJS open, sending peer_id:", username, id);
       setPeerId(id);
       if (!sentPeerIdRef.current) {
         sentPeerIdRef.current = true;
