@@ -1,8 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import downloadIco from "../assets/icons/audioPlayer/download.svg";
-import playIco from "../assets/icons/audioPlayer/play.svg";
-import pauseIco from "../assets/icons/audioPlayer/pause.svg";
-import fullscreenIco from "../assets/icons/openInNewTab.svg";
+import { Download, Play, Pause, Maximize, Loader2 } from "lucide-react";
 
 function formatTime(time) {
   if (isNaN(time)) return "00:00";
@@ -20,7 +17,7 @@ export default function VideoAttachment({ fileUrl }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [buffered, setBuffered] = useState(0); // درصد بافر شده
+  const [buffered, setBuffered] = useState(0);
   const [isBuffering, setIsBuffering] = useState(false);
 
   useEffect(() => {
@@ -38,17 +35,9 @@ export default function VideoAttachment({ fileUrl }) {
       updateBuffered();
     };
 
-    const onProgress = () => {
-      updateBuffered();
-    };
-
-    const onWaiting = () => {
-      setIsBuffering(true);
-    };
-
-    const onPlaying = () => {
-      setIsBuffering(false);
-    };
+    const onProgress = () => updateBuffered();
+    const onWaiting = () => setIsBuffering(true);
+    const onPlaying = () => setIsBuffering(false);
 
     function updateBuffered() {
       if (!video.buffered || video.buffered.length === 0) {
@@ -86,13 +75,6 @@ export default function VideoAttachment({ fileUrl }) {
     }
   };
 
-  const handleProgressChange = (e) => {
-    const video = videoRef.current;
-    const value = Number(e.target.value);
-    video.currentTime = value;
-    setCurrentTime(value);
-  };
-
   const handleFullscreen = () => {
     const video = videoRef.current;
     if (video.requestFullscreen) {
@@ -118,32 +100,13 @@ export default function VideoAttachment({ fileUrl }) {
 
         {isBuffering && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded">
-            <svg
-              className="animate-spin h-8 w-8 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              ></path>
-            </svg>
+            <Loader2 className="w-8 h-8 text-white animate-spin" />
           </div>
         )}
       </div>
 
       <div className="flex flex-col gap-2 w-full">
-        {/* Progress bar container */}
+        {/* نوار پیشرفت */}
         <div
           className="relative w-full h-2 rounded bg-gray-300 dark:bg-zinc-700 cursor-pointer"
           onClick={(e) => {
@@ -154,53 +117,51 @@ export default function VideoAttachment({ fileUrl }) {
             setCurrentTime(newTime);
           }}
         >
-          {/* Buffered bar */}
           <div
             className="absolute top-0 left-0 h-full bg-gray-400 dark:bg-zinc-500 rounded"
             style={{ width: `${buffered}%` }}
           />
-          {/* Played bar */}
           <div
             className="absolute top-0 left-0 h-full bg-blue-600 rounded"
             style={{ width: `${(currentTime / duration) * 100 || 0}%` }}
           />
         </div>
 
-        {/* Times */}
+        {/* زمان */}
         <div className="flex items-center justify-between text-sm text-zinc-700 dark:text-zinc-300">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
 
-        {/* Controls */}
+        {/* دکمه‌ها */}
         <div className="flex justify-between">
           <button
             onClick={togglePlay}
-            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer"
+            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer transition"
             title={isPlaying ? "Pause" : "Play"}
           >
-            <img
-              src={isPlaying ? pauseIco : playIco}
-              alt="play/pause"
-              className="w-4"
-            />
+            {isPlaying ? (
+              <Pause className="w-4 h-4" />
+            ) : (
+              <Play className="w-4 h-4" />
+            )}
           </button>
 
           <div className="flex gap-2">
             <a
               href={fileUrl}
               download
-              className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full"
+              className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full transition"
               title="Download"
             >
-              <img src={downloadIco} alt="download" className="w-4" />
+              <Download className="w-4 h-4" />
             </a>
             <button
               onClick={handleFullscreen}
-              className="bg-zinc-600 hover:bg-zinc-700 text-white p-2 rounded-full cursor-pointer"
+              className="bg-zinc-600 hover:bg-zinc-700 text-white p-2 rounded-full cursor-pointer transition"
               title="Fullscreen"
             >
-              <img src={fullscreenIco} alt="fullscreen" className="w-4" />
+              <Maximize className="w-4 h-4" />
             </button>
           </div>
         </div>

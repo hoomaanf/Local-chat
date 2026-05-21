@@ -1,6 +1,5 @@
 import { toJalaali } from "jalaali-js";
-import replyIco from "../assets/icons/reply.svg";
-import userIco from "../assets/icons/user.svg";
+import { Reply, User, Smile } from "lucide-react";
 import useRenderFile from "../hooks/useRenderFile";
 import ReactionBox from "./ReactionsBox";
 import { useState } from "react";
@@ -11,11 +10,11 @@ function ReplyBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-4 h-4 cursor-pointer"
+      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-300 hover:text-white transition"
       title="Reply to message"
       aria-label="Reply to message"
     >
-      <img src={replyIco} alt="Reply to message" />
+      <Reply className="w-4 h-4" />
     </button>
   );
 }
@@ -45,7 +44,8 @@ function MembersMessage({
   };
 
   return (
-    <div className="flex justify-start message-item gap-2 ">
+    <div className="flex justify-start message-item gap-2">
+      {/* آواتار */}
       {member.profileUrl ? (
         <img
           src={member.profileUrl}
@@ -53,11 +53,9 @@ function MembersMessage({
           className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400"
         />
       ) : (
-        <img
-          src={userIco}
-          alt={member.username}
-          className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400 bg-white"
-        />
+        <div className="w-10 h-10 bg-gray-500 rounded-full border-2 border-gray-400 flex items-center justify-center">
+          <User className="w-5 h-5 text-white" />
+        </div>
       )}
 
       <div
@@ -66,6 +64,7 @@ function MembersMessage({
       >
         <div className="text-sm font-semibold">{member.username}</div>
 
+        {/* ریپلای */}
         {repliedMessage && (
           <div
             className="mb-2 p-2 border-l-4 border-white/40 bg-white/10 rounded text-sm text-white/80 cursor-pointer max-w-72"
@@ -76,10 +75,13 @@ function MembersMessage({
           </div>
         )}
 
+        {/* فایل */}
         {useRenderFile(member.fileUrl, serverIp)}
+
+        {/* متن */}
         <div className="text-base mt-1 whitespace-pre-wrap">
           {member.text.includes("http") ? (
-            <a href={member.text} target="_blank">
+            <a href={member.text} target="_blank" rel="noopener noreferrer">
               {member.text}
             </a>
           ) : (
@@ -87,6 +89,7 @@ function MembersMessage({
           )}
         </div>
 
+        {/* زمان + دکمه ریپلای */}
         <div className="text-xs text-gray-100 mt-1 gap-2 flex items-center justify-between">
           <div className="flex gap-2 items-center">
             <p>{member.time}</p>
@@ -95,6 +98,7 @@ function MembersMessage({
           <ReplyBtn onClick={() => handleReplyClick(member)} />
         </div>
 
+        {/* ری‌اکشن‌ها */}
         {showReactionBox && (
           <ReactionBox
             messageId={member.id}
@@ -104,11 +108,11 @@ function MembersMessage({
                 reactions: emoji,
                 userReacted: username,
               });
-
               setShowReactionBox(false);
             }}
           />
         )}
+
         {member.reactions.length ? (
           <UserReactionBox
             reactions={member.reactions}
@@ -117,11 +121,11 @@ function MembersMessage({
           />
         ) : (
           <button
-            onClick={() => {
-              setShowReactionBox((prev) => !prev);
-            }}
+            onClick={() => setShowReactionBox((prev) => !prev)}
+            className="text-gray-300 hover:text-yellow-400 transition"
+            title="Add reaction"
           >
-            😀
+            <Smile className="w-4 h-4" />
           </button>
         )}
       </div>

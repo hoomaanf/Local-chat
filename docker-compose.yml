@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+      - "9000:9000"
+    volumes:
+      - server_data:/app/server
+    networks:
+      - chat-net
+
+networks:
+  chat-net:
+
+volumes:
+  server_data:

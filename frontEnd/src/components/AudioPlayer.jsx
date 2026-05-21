@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import playIco from "../assets/icons/audioPlayer/play.svg";
-import pauseIco from "../assets/icons/audioPlayer/pause.svg";
-import downloadIco from "../assets/icons/audioPlayer/download.svg";
+import { Play, Pause, Download, Loader2 } from "lucide-react";
 
 export default function AudioPlayer({ fileUrl }) {
   const audioRef = useRef(null);
@@ -34,13 +32,8 @@ export default function AudioPlayer({ fileUrl }) {
       setIsLoading(false);
     };
 
-    const handleWaiting = () => {
-      setIsLoading(true);
-    };
-
-    const handlePlaying = () => {
-      setIsLoading(false);
-    };
+    const handleWaiting = () => setIsLoading(true);
+    const handlePlaying = () => setIsLoading(false);
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("timeupdate", handleTimeUpdate);
@@ -89,43 +82,27 @@ export default function AudioPlayer({ fileUrl }) {
   };
 
   return (
-    <div className="bg-zinc-900 text-white p-2  flex items-center rounded-xl shadow-md w-full">
+    <div className="bg-zinc-900 text-white p-2 flex items-center rounded-xl shadow-md w-full">
       <audio ref={audioRef} src={fileUrl} preload="metadata" />
-      <div className="flex items-center justify-between gap-4">
+
+      <div className="flex items-center justify-between gap-4 w-full">
+        {/* دکمه Play/Pause */}
         <button
           onClick={togglePlay}
-          className="bg-zinc-700 hover:bg-zinc-600 p-2 cursor-pointer rounded-full flex items-center justify-center w-10 h-10"
+          className="bg-zinc-700 hover:bg-zinc-600 p-2 cursor-pointer rounded-full flex items-center justify-center w-10 h-10 transition"
           disabled={isLoading}
           title={isPlaying ? "Pause" : "Play"}
         >
           {isLoading ? (
-            <svg
-              className="animate-spin h-5 w-5 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              ></path>
-            </svg>
+            <Loader2 className="w-5 h-5 text-white animate-spin" />
           ) : isPlaying ? (
-            <img src={pauseIco} alt="pause" className="w-4" />
+            <Pause className="w-4 h-4 text-white" />
           ) : (
-            <img src={playIco} alt="play" className="w-4" />
+            <Play className="w-4 h-4 text-white ml-0.5" />
           )}
         </button>
 
+        {/* نوار پیشرفت */}
         <div className="flex-1">
           <div className="relative h-2 w-full rounded-md bg-zinc-700 overflow-hidden mb-1">
             <div
@@ -152,13 +129,14 @@ export default function AudioPlayer({ fileUrl }) {
           </div>
         </div>
 
+        {/* دکمه دانلود */}
         <a
           href={fileUrl}
           download
-          className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full"
+          className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full transition"
           title="Download"
         >
-          <img src={downloadIco} alt="download" className="w-4" />
+          <Download className="w-4 h-4" />
         </a>
       </div>
     </div>

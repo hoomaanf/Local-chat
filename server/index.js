@@ -3,11 +3,16 @@ const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 const multer = require("multer");
-const http = require("http");
+const https = require("https");
 const WebSocket = require("ws");
 
 const app = express();
-const server = http.createServer(app);
+const options = {
+  key: fs.readFileSync(path.join(__dirname, "..", "key.pem")),
+  cert: fs.readFileSync(path.join(__dirname, "..", "cert.pem")),
+};
+
+const server = https.createServer(options, app);
 const wss = new WebSocket.Server({ server });
 
 app.use(cors());
@@ -19,13 +24,11 @@ const UPLOADS_DIR = path.join(__dirname, "uploads");
 const PROFILE_DIR = path.join(UPLOADS_DIR, "profiles");
 const FILES_DIR = path.join(UPLOADS_DIR, "files");
 
-// ایجاد پوشه‌ها
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 if (!fs.existsSync(PROFILE_DIR)) fs.mkdirSync(PROFILE_DIR);
 if (!fs.existsSync(FILES_DIR)) fs.mkdirSync(FILES_DIR);
 
-// ذخیره اتصالات کاربران
-const clients = new Map(); // username => WebSocket
+const clients = new Map();
 
 // ==================== توابع کمکی ====================
 
@@ -53,55 +56,47 @@ function saveUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
 
-// ==================== Multer Setup ====================
+// ==================== Multer ====================
 
-// مخصوص آپلود عکس پروفایل
 const profileStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, PROFILE_DIR),
-  filename: (req, file, cb) => {
-    const username = req.body.username;
-    const ext = path.extname(file.originalname);
-    cb(null, username + ext);
-  },
+  filename: (req, file, cb) =>
+    cb(null, req.body.username + path.extname(file.originalname)),
 });
 const uploadProfile = multer({ storage: profileStorage });
 
-// مخصوص آپلود فایل‌های پیام
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, FILES_DIR),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
-  },
+  filename: (req, file, cb) =>
+    cb(
+      null,
+      Date.now() +
+        "-" +
+        Math.round(Math.random() * 1e9) +
+        "-" +
+        file.originalname,
+    ),
 });
 const uploadFile = multer({ storage: fileStorage });
 
-// سرو فایل‌های استاتیک
 app.use("/uploads", express.static(UPLOADS_DIR));
 
-// ==================== WebSocket Handlers ====================
+// ==================== WebSocket چت ====================
 
-wss.on("connection", (ws, req) => {
-  // ارسال پیام‌های قبلی به کاربر جدید
+wss.on("connection", (ws) => {
   const messages = loadMessages();
   const users = loadUsers();
   const messagesWithProfiles = messages.map((msg) => {
     const user = users.find((u) => u.username === msg.username);
     return { ...msg, profileUrl: user ? user.profileUrl : null };
   });
-
   ws.send(
-    JSON.stringify({
-      type: "initial_messages",
-      data: messagesWithProfiles,
-    }),
+    JSON.stringify({ type: "initial_messages", data: messagesWithProfiles }),
   );
 
-  // دریافت پیام از کلاینت
   ws.on("message", (data) => {
     try {
       const message = JSON.parse(data);
-
       switch (message.type) {
         case "login":
           handleLogin(ws, message.data);
@@ -121,17 +116,19 @@ wss.on("connection", (ws, req) => {
         case "logout":
           handleLogout(ws, message.data);
           break;
+        case "peer_id":
+          handlePeerId(ws, message.data);
+          break;
       }
     } catch (error) {
       console.error("Error processing message:", error);
     }
   });
 
-  // وقتی کاربر قطع میشه
   ws.on("close", () => {
-    for (let [username, clientWs] of clients.entries()) {
-      if (clientWs === ws) {
-        clients.delete(username);
+    for (let [username, value] of clients.entries()) {
+      if ((value?.ws || value) === ws) {
+        value.ws = null; // فقط ws رو خالی کن، peerId بمونه
         broadcastUserList();
         break;
       }
@@ -139,31 +136,27 @@ wss.on("connection", (ws, req) => {
   });
 });
 
-// ==================== WebSocket Message Handlers ====================
+// ==================== Handlers ====================
 
 function handleLogin(ws, data) {
   const { username } = data;
+  const existing = clients.get(username);
 
-  // ذخیره اتصال کاربر
-  clients.set(username, ws);
+  if (existing) {
+    // کاربر reconnect کرده → فقط ws رو آپدیت کن
+    existing.ws = ws;
+  } else {
+    // کاربر جدید
+    clients.set(username, { ws, peerId: null });
+  }
 
-  // تایید لاگین
-  ws.send(
-    JSON.stringify({
-      type: "login_success",
-      data: { username },
-    }),
-  );
-
-  // به‌روزرسانی لیست آنلاین برای همه
+  ws.send(JSON.stringify({ type: "login_success", data: { username } }));
   broadcastUserList();
 }
 
 function handleNewMessage(ws, data) {
   const { username, text, replyToId, fileUrl } = data;
-
   if (!username || (!text && !fileUrl)) return;
-
   const messages = loadMessages();
   const newMessage = {
     id: Date.now(),
@@ -173,192 +166,137 @@ function handleNewMessage(ws, data) {
     time: new Date().toTimeString().split(" ")[0],
     date: new Date().toLocaleDateString(),
     replyToId: replyToId || null,
-    reactions: [
-      // {
-      //   user: null,
-      //   reactions: [],
-      // },
-    ],
+    reactions: [],
   };
-
   messages.push(newMessage);
   saveMessages(messages);
-
-  // گرفتن پروفایل کاربر
   const users = loadUsers();
   const user = users.find((u) => u.username === username);
-
-  const messageWithProfile = {
-    ...newMessage,
-    profileUrl: user ? user.profileUrl : null,
-  };
-
-  // ارسال به همه کاربران آنلاین
   broadcastMessage({
     type: "new_message",
-    data: messageWithProfile,
+    data: { ...newMessage, profileUrl: user?.profileUrl || null },
   });
 }
+
 function handleReaction(data) {
   const { userReacted, messageId, reactions } = data;
   if (!userReacted || !reactions.length || !messageId) return;
-
   const messages = loadMessages();
-  const messageIndex = messages.findIndex((m) => m.id === messageId);
-
-  if (messageIndex > -1) {
-    const reactedMessage = messages[messageIndex].reactions.find(
-      (react) => react.user == userReacted,
+  const idx = messages.findIndex((m) => m.id === messageId);
+  if (idx === -1) return;
+  const reacted = messages[idx].reactions.find((r) => r.user === userReacted);
+  if (reacted) {
+    messages[idx].reactions = messages[idx].reactions.filter(
+      (r) => r.user !== userReacted,
     );
-    if (reactedMessage) {
-      const removedReactionMessage = messages[messageIndex].reactions.filter(
-        (react) => react.user != reactedMessage.user,
-      );
-      messages[messageIndex].reactions = removedReactionMessage;
-    } else {
-      messages[messageIndex].reactions.push({
-        user: userReacted,
-        reactions: reactions,
-      });
-    }
-    saveMessages(messages);
-
-    const messageReacted = {
-      ...messages[messageIndex],
-    };
-
-    // اینجا باید به همه خبر بدی! 🔥
-    broadcastMessage({
-      type: "react_message", // یه تایپ جدید
-      data: messageReacted,
-    });
+  } else {
+    messages[idx].reactions.push({ user: userReacted, reactions });
   }
+  saveMessages(messages);
+  broadcastMessage({ type: "react_message", data: messages[idx] });
 }
 
 function handleEditMessage(ws, data) {
   const { messageId, text } = data;
   const messages = loadMessages();
-  const messageIndex = messages.findIndex((m) => m.id === messageId);
-
-  if (messageIndex > -1) {
-    // آپدیت پیام
-    messages[messageIndex].text = text;
-    messages[messageIndex].edited = true;
-    saveMessages(messages);
-
-    // گرفتن پروفایل کاربر
-    const users = loadUsers();
-    const user = users.find(
-      (u) => u.username === messages[messageIndex].username,
-    );
-
-    const messageWithProfile = {
-      ...messages[messageIndex],
-      profileUrl: user ? user.profileUrl : null,
-    };
-
-    // اینجا باید به همه خبر بدی! 🔥
-    broadcastMessage({
-      type: "message_updated", // یه تایپ جدید
-      data: messageWithProfile,
-    });
-  }
-}
-function handleDeleteMessage(ws, data) {
-  const { messageId } = data;
-
-  const messages = loadMessages();
-  const filteredMessages = messages.filter((m) => m.id !== messageId);
-  saveMessages(filteredMessages);
-
+  const idx = messages.findIndex((m) => m.id === messageId);
+  if (idx === -1) return;
+  messages[idx].text = text;
+  messages[idx].edited = true;
+  saveMessages(messages);
+  const users = loadUsers();
+  const user = users.find((u) => u.username === messages[idx].username);
   broadcastMessage({
-    type: "message_deleted",
-    data: { id: messageId },
+    type: "message_updated",
+    data: { ...messages[idx], profileUrl: user?.profileUrl || null },
   });
 }
 
+function handleDeleteMessage(ws, data) {
+  const messages = loadMessages().filter((m) => m.id !== data.messageId);
+  saveMessages(messages);
+  broadcastMessage({ type: "message_deleted", data: { id: data.messageId } });
+}
+
 function handleLogout(ws, data) {
-  const { username } = data;
-  clients.delete(username);
+  const existing = clients.get(data.username);
+  if (existing) {
+    existing.ws = null; // فقط ws رو خالی کن
+  }
   broadcastUserList();
 }
 
+function handlePeerId(ws, data) {
+  console.log("📥 Received peer_id:", data); // ← اینو اضافه کن
+  const { username, peerId } = data;
+  const existing = clients.get(username);
+  if (existing) {
+    existing.peerId = peerId;
+  }
+  broadcastMessage({ type: "peer_update", data: { username, peerId } });
+}
+
 function broadcastMessage(message) {
-  const messageStr = JSON.stringify(message);
-  clients.forEach((clientWs) => {
-    if (clientWs.readyState === WebSocket.OPEN) {
-      clientWs.send(messageStr);
-    }
+  const str = JSON.stringify(message);
+  clients.forEach((value) => {
+    const ws = value?.ws;
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(str);
   });
 }
 
 function broadcastUserList() {
-  const onlineUsers = Array.from(clients.keys());
-  broadcastMessage({
-    type: "online_users",
-    data: onlineUsers,
+  const list = [];
+  clients.forEach((value, username) => {
+    if (value) {
+      list.push({ username, peerId: value.peerId || null });
+    }
   });
+  console.log({ type: "online_users", data: list });
+  broadcastMessage({ type: "online_users", data: list });
 }
 
-// ==================== REST endpoints (برای آپلود فایل) ====================
+// ==================== REST ====================
 
-// آپلود عکس پروفایل
 app.post("/api/login", uploadProfile.single("profile"), (req, res) => {
   const { username } = req.body;
-  if (!username || username.trim() === "") {
+  if (!username?.trim())
     return res.status(400).json({ error: "Username is required" });
-  }
-
   let users = loadUsers();
   let profileUrl = null;
-
   if (req.file) {
-    const protocol = req.protocol;
-    const host = req.get("host");
-    profileUrl = `${protocol}://${host}/uploads/profiles/${req.file.filename}`;
+    profileUrl = `${req.protocol}://${req.get("host")}/uploads/profiles/${req.file.filename}`;
   } else {
-    const existingUser = users.find((u) => u.username === username);
-    profileUrl = existingUser ? existingUser.profileUrl : null;
+    profileUrl = users.find((u) => u.username === username)?.profileUrl || null;
   }
-
-  const existingIndex = users.findIndex((u) => u.username === username);
-  if (existingIndex > -1) {
-    users[existingIndex].profileUrl = profileUrl;
-  } else {
-    users.push({ username, profileUrl });
-  }
+  const idx = users.findIndex((u) => u.username === username);
+  if (idx > -1) users[idx].profileUrl = profileUrl;
+  else users.push({ username, profileUrl });
   saveUsers(users);
-
   res.json({ username, profileUrl });
 });
 
-// آپلود فایل برای پیام
 app.post("/api/upload", uploadFile.single("file"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "No file uploaded" });
-  }
-
-  const protocol = req.protocol;
-  const host = req.get("host");
-  const fileUrl = `${protocol}://${host}/uploads/files/${req.file.filename}`;
-
-  res.json({ url: fileUrl });
+  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  res.json({
+    url: `${req.protocol}://${req.get("host")}/uploads/files/${req.file.filename}`,
+  });
 });
 
-// دریافت همه پیام‌ها (برای مواقع ضروری - مثلاً وقتی WebSocket وصل نیست)
 app.get("/api/messages", (req, res) => {
   const messages = loadMessages();
   const users = loadUsers();
-  const messagesWithProfiles = messages.map((msg) => {
-    const user = users.find((u) => u.username === msg.username);
-    return { ...msg, profileUrl: user ? user.profileUrl : null };
-  });
-  res.json(messagesWithProfiles);
+  res.json(
+    messages.map((msg) => ({
+      ...msg,
+      profileUrl:
+        users.find((u) => u.username === msg.username)?.profileUrl || null,
+    })),
+  );
 });
 
-// ==================== شروع سرور ====================
+// ==================== شروع ====================
 
-server.listen(4000, "0.0.0.0", () => {
-  console.log("✅ Server running on http://0.0.0.0:4000");
-  console.log("✅ WebSocket server running on ws://0.0.0.0:4000");
+server.listen(3000, "0.0.0.0", () => {
+  console.log("✅ Server running on https://0.0.0.0:3000");
+  console.log("✅ WebSocket chat on wss://0.0.0.0:3000");
 });

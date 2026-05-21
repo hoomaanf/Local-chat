@@ -1,9 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useWebSocket } from "../context/WebSocketContext";
-import sendIco from "../assets/icons/send.svg";
-import closeIco from "../assets/icons/close.svg";
-import attachIco from "../assets/icons/attach.svg";
+import { Send, X, Paperclip } from "lucide-react";
 
 function MessageInput({
   scrollBottom,
@@ -27,7 +25,7 @@ function MessageInput({
       const formData = new FormData();
       formData.append("file", file);
 
-      xhr.open("POST", `http://${serverIp}:3000/api/upload`);
+      xhr.open("POST", `https://${serverIp}:3000/api/upload`);
 
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
@@ -74,7 +72,6 @@ function MessageInput({
           fileUrl = await uploadFile(file);
         }
 
-        // ارسال از طریق WebSocket
         sendMessage({
           username,
           text: text,
@@ -83,7 +80,6 @@ function MessageInput({
         });
       }
 
-      // پاک کردن فرم
       setText("");
       setFile(null);
       setReplyTo(null);
@@ -141,9 +137,9 @@ function MessageInput({
           </div>
           <button
             onClick={() => setReplyTo(null)}
-            className="text-red-400 hover:text-red-600"
+            className="text-red-400 hover:text-red-500 transition"
           >
-            <img src={closeIco} alt="close" className="w-4" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -158,9 +154,9 @@ function MessageInput({
               setIsEditing(false);
               setText("");
             }}
-            className="text-red-400 hover:text-red-600"
+            className="text-red-400 hover:text-red-500 transition"
           >
-            <img src={closeIco} alt="cancel" className="w-4" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -179,7 +175,7 @@ function MessageInput({
       )}
 
       {/* Input Area */}
-      <div className="flex items-end gap-2 p-2 bg-gray-900 border border-gray-700 rounded-2xl">
+      <div className="flex items-center gap-2 p-2 bg-gray-900 border border-gray-700 rounded-2xl">
         <textarea
           ref={textInputRef}
           rows={1}
@@ -207,24 +203,28 @@ function MessageInput({
         />
         <label
           htmlFor="fileUpload"
-          className={`cursor-pointer p-2 rounded-full ${
-            isConnected ? "hover:bg-gray-800" : "opacity-50 cursor-not-allowed"
+          className={`cursor-pointer p-2 rounded-full transition ${
+            isConnected
+              ? "text-gray-400 hover:text-white hover:bg-gray-800"
+              : "opacity-50 cursor-not-allowed"
           }`}
+          title="Attach file"
         >
-          <img src={attachIco} alt="Attach" className="w-6" />
+          <Paperclip className="w-5 h-5" />
         </label>
 
         {/* Send Button */}
         <button
           onClick={handleSend}
           disabled={!isConnected || (!text.trim() && !file)}
-          className={`bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full transition duration-200 ${
+          className={`bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full transition ${
             !isConnected || (!text.trim() && !file)
               ? "opacity-50 cursor-not-allowed"
               : "cursor-pointer"
           }`}
+          title="Send"
         >
-          <img src={sendIco} alt="Send" className="w-4" />
+          <Send className="w-4 h-4" />
         </button>
       </div>
 

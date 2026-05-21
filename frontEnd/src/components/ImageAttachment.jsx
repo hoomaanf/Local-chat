@@ -1,5 +1,4 @@
-import downloadIco from "../assets/icons/audioPlayer/download.svg";
-import openInNewTab from "../assets/icons/openInNewTab.svg";
+import { Download, ExternalLink } from "lucide-react";
 
 function ImageAttachment({ fileUrl, alt = "Image attachment" }) {
   if (!fileUrl) return null;
@@ -17,13 +16,12 @@ function ImageAttachment({ fileUrl, alt = "Image attachment" }) {
       <div className="flex gap-3">
         {/* Download Button */}
         <a
-          target="_blank"
           href={fileUrl}
           download
-          className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full"
+          className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition"
           title="Download"
         >
-          <img src={downloadIco} alt="download" className="w-4" />
+          <Download className="w-4 h-4" />
         </a>
 
         {/* Open in new tab */}
@@ -31,10 +29,10 @@ function ImageAttachment({ fileUrl, alt = "Image attachment" }) {
           href={fileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-black dark:text-white p-2 rounded-full"
+          className="bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-black dark:text-white p-2 rounded-full transition"
           title="Open in new tab"
         >
-          <img src={openInNewTab} alt="open" className="w-4" />
+          <ExternalLink className="w-4 h-4" />
         </a>
       </div>
     </div>

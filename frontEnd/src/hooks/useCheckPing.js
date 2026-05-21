@@ -1,6 +1,6 @@
 export default async function useCheckPing(serverIp) {
   try {
-    const response = await fetch(`http://${serverIp}:3000/api/ping`, {
+    const response = await fetch(`https://${serverIp}:3000/api/ping`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

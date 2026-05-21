@@ -1,10 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 import { toJalaali } from "jalaali-js";
-import trashIco from "../assets/icons/trash.svg";
-import editIco from "../assets/icons/edit.svg";
-import copyIco from "../assets/icons/copy.svg";
-import replyIco from "../assets/icons/reply.svg";
-import userIco from "../assets/icons/user.svg";
+import { Trash2, Pencil, Copy, Reply, User } from "lucide-react";
 import useRenderFile from "../hooks/useRenderFile";
 import { useWebSocket } from "../context/WebSocketContext";
 
@@ -12,43 +8,46 @@ function DeleteBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-5 h-5 cursor-pointer"
+      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-300 hover:text-red-400 transition"
       title="Delete message"
     >
-      <img src={trashIco} alt="Delete message" />
+      <Trash2 className="w-4 h-4" />
     </button>
   );
 }
+
 function EditBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-6 h-6 cursor-pointer"
+      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-300 hover:text-blue-400 transition"
       title="Edit message"
     >
-      <img src={editIco} alt="Edit message" />
+      <Pencil className="w-4 h-4" />
     </button>
   );
 }
+
 function CopyBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-5 h-5 cursor-pointer"
+      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-300 hover:text-green-400 transition"
       title="Copy message"
     >
-      <img src={copyIco} alt="Copy message" />
+      <Copy className="w-4 h-4" />
     </button>
   );
 }
+
 function ReplyBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-4 h-4 cursor-pointer"
+      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-300 hover:text-white transition"
       title="Reply to message"
     >
-      <img src={replyIco} alt="Reply to message" />
+      <Reply className="w-4 h-4" />
     </button>
   );
 }
@@ -61,7 +60,7 @@ function UserMessage({
   allMessages,
 }) {
   const { deleteMessage } = useWebSocket();
-  const { serverIp: ip } = useAuth(); // optional if not passed as prop
+  const { serverIp: ip } = useAuth();
   const jDate = toJalaali(new Date(user.date));
 
   const repliedMessage = user.replyToId
@@ -91,6 +90,7 @@ function UserMessage({
 
   return (
     <div className="flex justify-end max-w-fit ml-auto flex-row-reverse items-end gap-2 message-item">
+      {/* آواتار */}
       {user.profileUrl ? (
         <img
           src={user.profileUrl}
@@ -98,11 +98,9 @@ function UserMessage({
           className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400"
         />
       ) : (
-        <img
-          src={userIco}
-          alt={user.username}
-          className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400 bg-white"
-        />
+        <div className="w-10 h-10 bg-gray-500 rounded-full border-2 border-gray-400 flex items-center justify-center">
+          <User className="w-5 h-5 text-white" />
+        </div>
       )}
 
       <div
@@ -111,6 +109,7 @@ function UserMessage({
       >
         <div className="text-sm font-semibold">YOU</div>
 
+        {/* ریپلای */}
         {repliedMessage && (
           <div
             className="bg-gray-500/40 border-r-4 border-blue-400 pr-2 pl-3 py-1 mb-2 rounded text-sm text-blue-100 max-w-xs cursor-pointer"
@@ -123,10 +122,13 @@ function UserMessage({
           </div>
         )}
 
+        {/* فایل */}
         {useRenderFile(user.fileUrl, serverIp || ip)}
+
+        {/* متن */}
         <div className="text-base mt-1 whitespace-pre-wrap">
           {user.text.includes("http") ? (
-            <a href={user.text} target="_blank">
+            <a href={user.text} target="_blank" rel="noopener noreferrer">
               {user.text}
             </a>
           ) : (
@@ -134,6 +136,7 @@ function UserMessage({
           )}
         </div>
 
+        {/* زمان + دکمه‌ها */}
         <div className="text-xs text-right text-blue-200 mt-1 flex flex-row-reverse gap-8 justify-between items-center">
           <div className="flex gap-2 items-center">
             <p>{user.time}</p>

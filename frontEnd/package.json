@@ -11,7 +11,10 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "jalaali-js": "^1.2.8",
+    "lucide-react": "^1.16.0",
+    "peerjs": "^1.5.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.7.0",

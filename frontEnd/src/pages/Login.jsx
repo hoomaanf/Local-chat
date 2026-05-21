@@ -13,7 +13,7 @@ function LoginPage({ onLogin }) {
 
     setLoading(true);
     try {
-      const res = await fetch(`http://${ip}:3000/api/login`, {
+      const res = await fetch(`https://${ip}:3000/api/login`, {
         method: "POST",
         body: formData,
       });

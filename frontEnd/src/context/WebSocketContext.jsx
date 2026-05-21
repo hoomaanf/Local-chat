@@ -34,7 +34,7 @@ export const WebSocketProvider = ({ children }) => {
       wsRef.current.close();
     }
 
-    const ws = new WebSocket(`ws://${serverIp}:4000`);
+    const ws = new WebSocket(`wss://${serverIp}:3000`);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -93,13 +93,50 @@ export const WebSocketProvider = ({ children }) => {
             break;
 
           case "online_users":
-            setOnlineUsers(message.data);
+            setOnlineUsers((prev) => {
+              const incoming = Array.isArray(message.data) ? message.data : [];
+              return incoming.map((u) => {
+                const name = typeof u === "string" ? u : u.username;
+                const existing = prev.find((p) => {
+                  const pName = typeof p === "string" ? p : p.username;
+                  return pName === name;
+                });
+                return {
+                  username: name,
+                  peerId: existing?.peerId || u?.peerId || null,
+                };
+              });
+            });
+            console.log(onlineUsers);
             break;
 
           case "login_success":
             console.log("✅ Login successful");
             break;
 
+          case "peer_update":
+            console.log("📢 peer_update:", message.data); // ← اضافه کن
+            setOnlineUsers((prev) => {
+              const existing = prev.find(
+                (u) => u.username === message.data.username,
+              );
+              if (existing) {
+                return prev.map((u) =>
+                  u.username === message.data.username
+                    ? { ...u, peerId: message.data.peerId }
+                    : u,
+                );
+              } else {
+                return [
+                  ...prev,
+                  {
+                    username: message.data.username,
+                    peerId: message.data.peerId,
+                  },
+                ];
+              }
+            });
+            break;
           default:
             console.log("Unknown message type:", message.type);
         }
@@ -212,6 +249,14 @@ export const WebSocketProvider = ({ children }) => {
     return false;
   };
 
+  const sendWebSocketMessage = (type, data) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type, data }));
+      return true;
+    }
+    return false;
+  };
+
   const value = {
     isConnected,
     onlineUsers,
@@ -221,6 +266,7 @@ export const WebSocketProvider = ({ children }) => {
     logout,
     handleEditMessage,
     handleReaction,
+    sendWebSocketMessage,
   };
 
   return (

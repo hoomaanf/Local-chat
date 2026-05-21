@@ -3,6 +3,7 @@ import Chat from "./pages/Chat";
 import Loading from "./components/Loading";
 import { useAuth } from "./context/AuthContext";
 import { WebSocketProvider } from "./context/WebSocketContext";
+import SSLModal from "./components/SSLModal";
 
 function App() {
   const { login, username, serverIp, loading } = useAuth();
@@ -13,6 +14,8 @@ function App() {
 
   return (
     <>
+      <SSLModal serverIp={serverIp} />
+
       {loading ? (
         <div className="flex items-center justify-center h-screen bg-gray-900">
           <Loading />
