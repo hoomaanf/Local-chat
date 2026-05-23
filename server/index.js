@@ -253,7 +253,17 @@ function broadcastUserList() {
   broadcastMessage({ type: "online_users", data: list });
 }
 
+function generateCode(phoneNumber) {
+  const last4 = phoneNumber.slice(-4);
+  const code = (parseInt(last4) * 7 + 123) % 10000;
+  return code.toString().padStart(4, "0");
+}
+
 // ==================== REST ====================
+
+app.get("/api/ping", (req, res) => {
+  res.json({ staus: "success" }).status(200);
+});
 
 app.post("/api/login", uploadProfile.single("profile"), (req, res) => {
   const { username } = req.body;
@@ -290,6 +300,40 @@ app.get("/api/messages", (req, res) => {
         users.find((u) => u.username === msg.username)?.profileUrl || null,
     })),
   );
+});
+
+app.post("/api/generate-code", (req, res) => {
+  const { phone } = req.body;
+
+  if (!phone || phone.length < 4) {
+    return res.status(400).json({ error: "شماره موبایل نامعتبر" });
+  }
+
+  const code = generateCode(phone);
+
+  res.json({ code });
+});
+
+app.post("/api/verify-code", (req, res) => {
+  const { phone, code, username } = req.body; // ← username اضافه شد
+
+  const expectedCode = generateCode(phone);
+
+  if (code === expectedCode) {
+    const name = username || phone;
+    let users = loadUsers();
+    const existingUser = users.find((u) => u.username === name);
+    const profileUrl = existingUser?.profileUrl || null;
+
+    if (!existingUser) {
+      users.push({ username: name, profileUrl: null });
+      saveUsers(users);
+    }
+
+    res.json({ username: name, profileUrl, success: true });
+  } else {
+    res.status(401).json({ error: "کد اشتباه" });
+  }
 });
 
 // ==================== شروع ====================

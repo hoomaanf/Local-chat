@@ -1,6 +1,8 @@
 export default function UserReactionBox({ reactions, selectReact, id }) {
+  if (!reactions || reactions.length === 0) return null;
+
   return (
-    <div className="flex items-center w-fit space-x-2 bg-gray-600 px-2 py-1.5 mt-4 rounded-2xl border ">
+    <div className="flex flex-wrap items-center gap-1 mt-2">
       {reactions.map((reactionData, idx) => (
         <button
           key={idx}
@@ -12,22 +14,25 @@ export default function UserReactionBox({ reactions, selectReact, id }) {
             });
           }}
           type="button"
-          className={`
-            flex items-center
-            text-2xl
-            transition
-            hover:scale-110
-            px-2 py-1.5
-            rounded-xl
-            hover:bg-gray-500
+          className="
+            group
+            relative
+            flex items-center gap-1
+            bg-gray-700/60 hover:bg-gray-600
+            border border-gray-600 hover:border-gray-500
+            px-2.5 py-1
+            rounded-full
+            text-sm
+            transition-all
+            hover:scale-105
             cursor-pointer
-          `}
+          "
+          title={`${reactionData.user}: ${reactionData.reactions}`}
         >
-          <span className="mr-1 text-sm">{reactionData.reactions}</span>
-          <span
-            className="text-sm
-           text-gray-300"
-          >
+          <span className="text-base leading-none">
+            {reactionData.reactions}
+          </span>
+          <span className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">
             {reactionData.user}
           </span>
         </button>

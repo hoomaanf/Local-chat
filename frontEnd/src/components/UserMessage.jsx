@@ -8,10 +8,10 @@ function DeleteBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-300 hover:text-red-400 transition"
+      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-500 hover:text-red-400 transition"
       title="Delete message"
     >
-      <Trash2 className="w-4 h-4" />
+      <Trash2 className="w-3.5 h-3.5" />
     </button>
   );
 }
@@ -20,10 +20,10 @@ function EditBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-300 hover:text-blue-400 transition"
+      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-500 hover:text-blue-400 transition"
       title="Edit message"
     >
-      <Pencil className="w-4 h-4" />
+      <Pencil className="w-3.5 h-3.5" />
     </button>
   );
 }
@@ -32,10 +32,10 @@ function CopyBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-300 hover:text-green-400 transition"
+      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-500 hover:text-green-400 transition"
       title="Copy message"
     >
-      <Copy className="w-4 h-4" />
+      <Copy className="w-3.5 h-3.5" />
     </button>
   );
 }
@@ -44,10 +44,10 @@ function ReplyBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-300 hover:text-white transition"
+      className="flex items-center justify-center w-5 h-5 cursor-pointer text-gray-500 hover:text-white transition"
       title="Reply to message"
     >
-      <Reply className="w-4 h-4" />
+      <Reply className="w-3.5 h-3.5" />
     </button>
   );
 }
@@ -61,7 +61,6 @@ function UserMessage({
 }) {
   const { deleteMessage } = useWebSocket();
   const { serverIp: ip } = useAuth();
-  const jDate = toJalaali(new Date(user.date));
 
   const repliedMessage = user.replyToId
     ? allMessages.find((msg) => msg.id === user.replyToId)
@@ -89,67 +88,74 @@ function UserMessage({
   };
 
   return (
-    <div className="flex justify-end max-w-fit ml-auto flex-row-reverse items-end gap-2 message-item">
+    <div className="flex justify-end message-item gap-2 group/message">
+      <div className="flex flex-col items-end max-w-lg">
+        {/* اسم فرستنده */}
+        <span className="text-xs text-gray-400 mb-1 mr-1">You</span>
+
+        <div
+          className="bg-[#1d6fa5] text-white p-3 rounded-2xl rounded-tr-sm shadow-md relative w-full"
+          dir="auto"
+          id={user.id}
+        >
+          {/* ریپلای */}
+          {repliedMessage && (
+            <div
+              className="mb-2 p-2 border-r-4 border-blue-400 bg-white/10 rounded text-sm text-white/80 cursor-pointer"
+              onClick={() => scrollToMessage(repliedMessage.id)}
+            >
+              <p className="font-semibold text-xs">
+                {repliedMessage.username || "..."}
+              </p>
+              <p className="truncate text-xs">{repliedMessage.text}</p>
+            </div>
+          )}
+
+          {/* فایل */}
+          {useRenderFile(user.fileUrl, serverIp || ip)}
+
+          {/* متن */}
+          {user.text && (
+            <div className="text-[15px] whitespace-pre-wrap break-words">
+              {user.text.includes("http") ? (
+                <a
+                  href={user.text}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-blue-300"
+                >
+                  {user.text}
+                </a>
+              ) : (
+                user.text
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* فوتر: زمان + دکمه‌ها */}
+        <div className="flex items-center gap-1 mt-1 mr-1 flex-row-reverse">
+          <span className="text-[11px] text-gray-500 ml-1">{user.time}</span>
+
+          <DeleteBtn onClick={handleDeleteClick} />
+          <EditBtn onClick={handleEditClick} />
+          <CopyBtn onClick={handleCopyClick} />
+          <ReplyBtn onClick={() => handleReplyClick(user)} />
+        </div>
+      </div>
+
       {/* آواتار */}
       {user.profileUrl ? (
         <img
           src={user.profileUrl}
           alt={user.username}
-          className="w-10 h-10 object-cover object-center rounded-full border-2 border-gray-400"
+          className="w-10 h-10 object-cover rounded-full border-2 border-gray-400 flex-shrink-0 mt-1"
         />
       ) : (
-        <div className="w-10 h-10 bg-gray-500 rounded-full border-2 border-gray-400 flex items-center justify-center">
+        <div className="w-10 h-10 bg-gray-500 rounded-full border-2 border-gray-400 flex items-center justify-center flex-shrink-0 mt-1">
           <User className="w-5 h-5 text-white" />
         </div>
       )}
-
-      <div
-        className="bg-gray-600 text-white p-3 rounded-xl shadow-lg flex-grow max-w-lg"
-        id={user.id}
-      >
-        <div className="text-sm font-semibold">YOU</div>
-
-        {/* ریپلای */}
-        {repliedMessage && (
-          <div
-            className="bg-gray-500/40 border-r-4 border-blue-400 pr-2 pl-3 py-1 mb-2 rounded text-sm text-blue-100 max-w-xs cursor-pointer"
-            onClick={() => scrollToMessage(repliedMessage.id)}
-          >
-            <span className="block font-semibold text-blue-200 mb-1">
-              Replying to {repliedMessage.username}:
-            </span>
-            <span className="line-clamp-2">{repliedMessage.text}</span>
-          </div>
-        )}
-
-        {/* فایل */}
-        {useRenderFile(user.fileUrl, serverIp || ip)}
-
-        {/* متن */}
-        <div className="text-base mt-1 whitespace-pre-wrap">
-          {user.text.includes("http") ? (
-            <a href={user.text} target="_blank" rel="noopener noreferrer">
-              {user.text}
-            </a>
-          ) : (
-            user.text
-          )}
-        </div>
-
-        {/* زمان + دکمه‌ها */}
-        <div className="text-xs text-right text-blue-200 mt-1 flex flex-row-reverse gap-8 justify-between items-center">
-          <div className="flex gap-2 items-center">
-            <p>{user.time}</p>
-            <p>{`${jDate.jy}/${jDate.jm}/${jDate.jd}`}</p>
-          </div>
-          <div className="flex gap-1 items-center">
-            <DeleteBtn onClick={handleDeleteClick} />
-            <EditBtn onClick={handleEditClick} />
-            <CopyBtn onClick={handleCopyClick} />
-            <ReplyBtn onClick={() => handleReplyClick(user)} />
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

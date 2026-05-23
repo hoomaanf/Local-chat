@@ -1,0 +1,8 @@
+# Dependencies
+node_modules/
+
+# Uploaded files (user content)
+server/uploads/*
+!server/uploads/.gitkeep
+server/messages.json
+server/users.json
