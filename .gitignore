@@ -1,20 +1,15 @@
 # Dependencies
 node_modules/
+frontEnd/node_modules/
+server/node_modules/
 
-# Environment
-.env
-.env.local
-.env.production
-
-# Build output
-dist/
-build/
-
-# SSL Certificates (keep out of Git)
+# SSL Certificates
 *.pem
-!example.pem
 
-# OS Files
+# Docker
+.docker/
+
+# OS
 .DS_Store
 Thumbs.db
 
@@ -26,14 +21,13 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Uploaded files (user content)
-server/uploads/*
-!server/uploads/.gitkeep
+# User data (ignore content changes)
 server/messages.json
 server/users.json
+server/uploads/*
+!server/uploads/.gitkeep
 
-# Docker
-.docker/
-
-# Vite cache
+# Build
+dist/
+build/
 .vite/
