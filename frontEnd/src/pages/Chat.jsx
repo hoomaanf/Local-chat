@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import MembersMessage from "../components/MembersMessage";
 import MessageInput from "../components/MessageInput";
 import UserMessage from "../components/UserMessage";
@@ -18,6 +18,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useSound } from "../hooks/useSound";
+import DateDivider from "../components/DateDivider";
 
 function Chat() {
   const { username, serverIp, logout } = useAuth();
@@ -258,28 +259,38 @@ function Chat() {
                 <p className="text-xs text-gray-600">اولین پیام رو تو بفرست!</p>
               </div>
             )}
-            {messages.map((msg) =>
-              msg.username === username ? (
-                <UserMessage
-                  key={msg.id}
-                  user={msg}
-                  allMessages={messages}
-                  serverIp={serverIp}
-                  editFunction={handleEditClick}
-                  handleReplyClick={handleReplyClick}
-                />
-              ) : (
-                <MembersMessage
-                  key={msg.id}
-                  member={msg}
-                  allMessages={messages}
-                  handleReplyClick={handleReplyClick}
-                  serverIp={serverIp}
-                  handleReaction={handleReaction}
-                  handleClickReaction={handleClickReaction}
-                />
-              ),
-            )}
+
+            {messages.map((msg, idx) => {
+              const prevMsg = idx > 0 ? messages[idx - 1] : null;
+              const showDivider =
+                !prevMsg ||
+                new Date(prevMsg.date).toDateString() !==
+                  new Date(msg.date).toDateString();
+
+              return (
+                <React.Fragment key={msg.id}>
+                  {showDivider && <DateDivider date={msg.date} />}
+                  {msg.username === username ? (
+                    <UserMessage
+                      user={msg}
+                      allMessages={messages}
+                      serverIp={serverIp}
+                      editFunction={handleEditClick}
+                      handleReplyClick={handleReplyClick}
+                    />
+                  ) : (
+                    <MembersMessage
+                      member={msg}
+                      allMessages={messages}
+                      handleReplyClick={handleReplyClick}
+                      serverIp={serverIp}
+                      handleReaction={handleReaction}
+                      handleClickReaction={handleClickReaction}
+                    />
+                  )}
+                </React.Fragment>
+              );
+            })}
             <div ref={messagesEndRef} />
           </div>
 

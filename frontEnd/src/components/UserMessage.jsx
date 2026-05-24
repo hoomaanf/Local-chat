@@ -101,7 +101,7 @@ function UserMessage({
           {/* ریپلای */}
           {repliedMessage && (
             <div
-              className="mb-2 p-2 border-r-4 border-blue-400 bg-white/10 rounded text-sm text-white/80 cursor-pointer"
+              className="mb-2 p-2 border-r-4 border-blue-400 bg-gray-500/50 rounded text-sm text-white/80 cursor-pointer"
               onClick={() => scrollToMessage(repliedMessage.id)}
             >
               <p className="font-semibold text-xs">
