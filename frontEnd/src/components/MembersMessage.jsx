@@ -88,7 +88,7 @@ function MembersMessage({
         </span>
 
         <div
-          className="bg-[#2b5378] text-white p-3 rounded-2xl rounded-tl-sm shadow-md relative"
+          className="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-3 rounded-2xl rounded-tl-sm shadow-md shadow-emerald-500/10 relative"
           dir="auto"
           id={member.id}
         >
@@ -150,21 +150,6 @@ function MembersMessage({
             >
               <Smile className="w-4 h-4" />
             </button>
-            {showReactionBox && (
-              <div className="absolute bottom-full left-0 mb-2 z-50 scale-75 origin-bottom-left">
-                <ReactionBox
-                  messageId={member.id}
-                  onSelect={(emoji) => {
-                    handleReaction({
-                      messageId: member.id,
-                      reactions: emoji,
-                      userReacted: username,
-                    });
-                    setShowReactionBox(false);
-                  }}
-                />
-              </div>
-            )}
             {showReactionBox && (
               <div className="absolute bottom-full left-0 mb-2 z-50 scale-75 origin-bottom-left">
                 <ReactionBox

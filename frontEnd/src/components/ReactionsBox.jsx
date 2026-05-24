@@ -11,17 +11,17 @@ export default function ReactionBox({ messageId, onSelect }) {
   };
 
   return (
-    <div className="flex items-center space-x-2 bg-gray-600 px-2 py-1.5 rounded-2xl border absolute mt-2">
+    <div className="flex items-center gap-1 bg-gray-800/95 backdrop-blur-sm px-2 py-1.5 rounded-2xl border border-gray-600/50 shadow-xl shadow-black/20">
       {REACTIONS.map((emoji) => (
         <button
           key={emoji}
           type="button"
           onClick={() => handleClick(emoji)}
           className={`
-            text-2xl
-            transition
-            hover:scale-110
-            ${selected === emoji ? "opacity-70" : "opacity-100"}
+            text-xl p-1 rounded-xl
+            transition-all duration-150
+            hover:scale-125 hover:bg-gray-700/50
+            ${selected === emoji ? "scale-110 bg-gray-700/50" : ""}
           `}
         >
           {emoji}

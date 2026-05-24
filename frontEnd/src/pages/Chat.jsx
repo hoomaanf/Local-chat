@@ -8,7 +8,16 @@ import { usePeerCall } from "../hooks/usePeerCall";
 import OnlineUsers from "../components/OnlineUsers";
 import IncomingCall from "../components/IncomingCall";
 import CallPanel from "../components/CallPanel";
-import { Users, LogOut, MessageCircle, Wifi, WifiOff } from "lucide-react";
+import {
+  Users,
+  LogOut,
+  MessageCircle,
+  Wifi,
+  WifiOff,
+  Sparkles,
+  ChevronDown,
+} from "lucide-react";
+import { useSound } from "../hooks/useSound";
 
 function Chat() {
   const { username, serverIp, logout } = useAuth();
@@ -32,6 +41,8 @@ function Chat() {
     toggleAudio,
   } = usePeerCall(username, serverIp);
 
+  const { play, stop } = useSound();
+
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -40,42 +51,70 @@ function Chat() {
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [lastSeenMessageId, setLastSeenMessageId] = useState(null);
   const [showOnlineUsers, setShowOnlineUsers] = useState(false);
+  const [newMessagesCount, setNewMessagesCount] = useState(0);
+
+  useEffect(() => {
+    const unlockSound = () => {
+      const tmp = new Audio();
+      tmp.play().catch(() => {});
+      document.removeEventListener("click", unlockSound);
+    };
+    document.addEventListener("click", unlockSound);
+  }, []);
 
   const handleScroll = () => {
     const container = messagesContainerRef.current;
     if (!container) return;
-
     const threshold = 50;
     const position =
       container.scrollHeight - container.scrollTop - container.clientHeight;
-
-    setIsAtBottom(position < threshold);
+    const atBottom = position < threshold;
+    setIsAtBottom(atBottom);
+    if (atBottom) setNewMessagesCount(0);
   };
 
-  const scrollBottom = () =>
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollBottom = () => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
+    setNewMessagesCount(0);
+  };
 
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-
     container.addEventListener("scroll", handleScroll);
     handleScroll();
-
     return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // اسکرول خودکار فقط وقتی کاربر پایینه
   useEffect(() => {
     if (isAtBottom) {
-      scrollBottom();
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isAtBottom]);
 
-  const handleEditClick = (id) => {
-    const messageToEdit = messages.find((msg) => msg.id === id);
-    if (messageToEdit) {
-      setMessageToEdit(messageToEdit);
+  // شمارش پیام‌های جدید وقتی کاربر بالا رو می‌بینه
+  useEffect(() => {
+    if (!isAtBottom && messages.length > 0) {
+      setNewMessagesCount((prev) => prev + 1);
+      play("newMessage");
     }
+  }, [messages.length]);
+
+  useEffect(() => {
+    if (incomingCall) {
+      console.log("object");
+      play("incomingCall", true);
+    } else {
+      stop("incomingCall");
+    }
+  }, [incomingCall]);
+
+  const handleEditClick = (id) => {
+    const msg = messages.find((m) => m.id === id);
+    if (msg) setMessageToEdit(msg);
   };
 
   const showNotification = (title, body) => {
@@ -84,9 +123,7 @@ function Chat() {
     }
   };
 
-  const handleReplyClick = (message) => {
-    setReplyTo(message);
-  };
+  const handleReplyClick = (message) => setReplyTo(message);
 
   const handleClickReaction = (reac) => {
     handleReaction({
@@ -100,13 +137,10 @@ function Chat() {
     const handleVisibilityChange = () => {
       const visible = !document.hidden;
       setIsPageVisible(visible);
-
       if (visible && isAtBottom && messages.length > 0) {
-        const lastMsg = messages[messages.length - 1];
-        setLastSeenMessageId(lastMsg.id);
+        setLastSeenMessageId(messages[messages.length - 1].id);
       }
     };
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -121,58 +155,64 @@ function Chat() {
   useEffect(() => {
     if (!isPageVisible && messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
-
       if (lastMsg.id !== lastSeenMessageId) {
         setLastSeenMessageId(lastMsg.id);
-
         if (lastMsg.username !== username) {
-          showNotification(lastMsg.username, lastMsg.text || "📎 Sent a file");
+          showNotification(lastMsg.username, lastMsg.text || "ارسال فایل");
         }
       }
     }
   }, [messages, isPageVisible, lastSeenMessageId, username]);
 
   return (
-    <div className="flex flex-col h-dvh bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100">
+    <div className="flex flex-col h-dvh bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-gray-100 relative overflow-hidden">
+      {/* پس‌زمینه موج */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500 rounded-full blur-[128px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500 rounded-full blur-[128px] animate-pulse" />
+      </div>
+
       {/* Header */}
-      <header className="p-4 bg-gray-900 shadow-md border-b border-gray-700 flex items-center justify-between gap-2">
+      <header className="relative z-10 backdrop-blur-xl bg-gray-900/70 border-b border-gray-700/50 px-4 py-3 flex items-center justify-between gap-2 shadow-lg">
         <div className="flex items-center gap-3">
-          <MessageCircle className="w-7 h-7 text-blue-400" />
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <MessageCircle className="w-5 h-5 text-white" />
+          </div>
           <div>
-            <h1 className="text-lg font-bold text-blue-400">Local Chat</h1>
+            <h1 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Local Chat
+            </h1>
             {!isConnected ? (
-              <span className="text-xs text-yellow-500 flex items-center gap-1">
-                <WifiOff className="w-3 h-3" /> Connecting...
+              <span className="text-[11px] text-yellow-500 flex items-center gap-1">
+                <WifiOff className="w-3 h-3" /> درحال اتصال...
               </span>
             ) : (
-              <span className="text-xs text-green-400 flex items-center gap-1">
-                <Wifi className="w-3 h-3" /> Connected
+              <span className="text-[11px] text-green-400 flex items-center gap-1">
+                <Wifi className="w-3 h-3" /> متصل
               </span>
             )}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* دکمه کاربران آنلاین */}
           <button
             onClick={() => setShowOnlineUsers(!showOnlineUsers)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition text-sm font-medium ${
+            className={`relative flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-300 text-sm font-medium cursor-pointer ${
               showOnlineUsers
-                ? "bg-blue-600 text-white"
-                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
+                : "bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:shadow-lg"
             }`}
           >
             <Users className="w-4 h-4" />
             <span>{onlineUsers.length}</span>
           </button>
 
-          {/* دکمه خروج */}
           <button
             onClick={() => {
               logout();
               wsLogout();
             }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-red-600 hover:text-white transition text-sm font-medium"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-800/50 text-gray-300 hover:bg-red-600/80 hover:text-white hover:shadow-lg hover:shadow-red-500/20 transition-all duration-300 text-sm font-medium cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             <span>خروج</span>
@@ -181,13 +221,20 @@ function Chat() {
       </header>
 
       {/* محتوای اصلی */}
-      <div className="flex-1 flex overflow-hidden relative">
-        {/* بخش چت */}
-        <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex overflow-hidden relative z-10">
+        <div className="flex-1 flex flex-col relative">
+          {/* پیام‌ها */}
           <div
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto p-4 space-y-4 modern-scrollBar"
+            className="flex-1 overflow-y-auto p-4 pb-2 space-y-3 modern-scrollBar"
           >
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-3">
+                <Sparkles className="w-12 h-12 text-gray-600 animate-pulse" />
+                <p className="text-sm">هنوز پیامی ارسال نشده</p>
+                <p className="text-xs text-gray-600">اولین پیام رو تو بفرست!</p>
+              </div>
+            )}
             {messages.map((msg) =>
               msg.username === username ? (
                 <UserMessage
@@ -213,7 +260,24 @@ function Chat() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-4 bg-gray-900 shadow-inner border-t border-gray-700">
+          {/* دکمه اسکرول به پایین (مثل تلگرام) */}
+          {!isAtBottom && (
+            <button
+              onClick={scrollBottom}
+              className="absolute bottom-24 right-6 z-20 w-10 h-10 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center transition-all duration-300 cursor-pointer"
+              title="برو به آخر"
+            >
+              <ChevronDown className="w-5 h-5" />
+              {newMessagesCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] flex items-center justify-center font-bold">
+                  {newMessagesCount > 99 ? "99+" : newMessagesCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* Input */}
+          <div className="relative z-10 bg-gradient-to-t from-gray-900 via-gray-900/95 to-transparent px-4 pb-4 pt-2">
             <MessageInput
               scrollBottom={scrollBottom}
               messageToEdit={messageToEdit}
@@ -226,7 +290,7 @@ function Chat() {
 
         {/* پنل کاربران آنلاین */}
         {showOnlineUsers && (
-          <div className="w-64 border-l border-gray-700 bg-gray-900 p-3 overflow-y-auto">
+          <div className="w-72 border-l border-gray-700/50 bg-gray-900/80 backdrop-blur-sm p-4 overflow-y-auto animate-slideInRight">
             <OnlineUsers onCall={startCall} inCall={inCall} />
           </div>
         )}

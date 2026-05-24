@@ -94,7 +94,7 @@ function UserMessage({
         <span className="text-xs text-gray-400 mb-1 mr-1">You</span>
 
         <div
-          className="bg-[#1d6fa5] text-white p-3 rounded-2xl rounded-tr-sm shadow-md relative w-full"
+          className="bg-gradient-to-br from-rose-500 to-pink-600 text-white p-3 rounded-2xl rounded-tr-sm shadow-lg shadow-violet-500/10 relative w-full"
           dir="auto"
           id={user.id}
         >

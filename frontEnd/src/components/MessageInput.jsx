@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useWebSocket } from "../context/WebSocketContext";
-import { Send, X, Paperclip } from "lucide-react";
+import { Send, X, Paperclip, Mic } from "lucide-react";
 
 function MessageInput({
   scrollBottom,
@@ -19,30 +19,30 @@ function MessageInput({
   const [isEditing, setIsEditing] = useState(false);
   const textInputRef = useRef(null);
 
+  useEffect(() => {
+    const handler = () => textInputRef.current?.focus();
+    window.addEventListener("keydown", handler);
+
+    return () => window.removeEventListener("keydown", handler); // پاک‌سازی
+  }, []);
+
   const uploadFile = (file) => {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       const formData = new FormData();
       formData.append("file", file);
-
       xhr.open("POST", `https://${serverIp}:3000/api/upload`);
 
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          const percent = Math.round((event.loaded / event.total) * 100);
-          setUploadProgress(percent);
+          setUploadProgress(Math.round((event.loaded / event.total) * 100));
         }
       };
 
       xhr.onload = () => {
-        if (xhr.status === 200) {
-          setUploadProgress(0);
-          const res = JSON.parse(xhr.responseText);
-          resolve(res.url);
-        } else {
-          setUploadProgress(0);
-          reject(new Error("Upload failed"));
-        }
+        setUploadProgress(0);
+        if (xhr.status === 200) resolve(JSON.parse(xhr.responseText).url);
+        else reject(new Error("Upload failed"));
       };
 
       xhr.onerror = () => {
@@ -59,22 +59,16 @@ function MessageInput({
 
     try {
       if (isEditing && messageToEdit) {
-        await handleEditMessage({
-          messageId: messageToEdit.id,
-          text: text,
-        });
-
+        await handleEditMessage({ messageId: messageToEdit.id, text });
         setMessageToEdit(null);
         setIsEditing(false);
       } else {
         let fileUrl = null;
-        if (file) {
-          fileUrl = await uploadFile(file);
-        }
+        if (file) fileUrl = await uploadFile(file);
 
         sendMessage({
           username,
-          text: text,
+          text,
           fileUrl,
           replyToId: replyTo?.id || null,
         });
@@ -116,11 +110,13 @@ function MessageInput({
     }
   }, [replyTo]);
 
+  const hasContent = text.trim() || file;
+
   return (
     <div className="flex flex-col gap-2">
       {/* Connection Status */}
       {!isConnected && (
-        <div className="text-xs text-yellow-500 px-2 flex items-center gap-2">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-xs text-yellow-400">
           <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
           Connecting to server...
         </div>
@@ -128,16 +124,16 @@ function MessageInput({
 
       {/* Reply Preview */}
       {replyTo && (
-        <div className="p-2 px-3 rounded bg-gray-700 text-sm text-gray-200 flex justify-between items-center">
-          <div className="truncate max-w-[80%]">
-            <span className="font-semibold text-blue-400">
-              Reply to {replyTo.username}:
+        <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+          <div className="flex-1 min-w-0">
+            <span className="text-xs text-blue-400 font-medium">
+              Reply to {replyTo.username}
             </span>
-            <span className="italic ml-2">{replyTo.text}</span>
+            <p className="text-sm text-gray-300 truncate">{replyTo.text}</p>
           </div>
           <button
             onClick={() => setReplyTo(null)}
-            className="text-red-400 hover:text-red-500 transition"
+            className="p-1 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -146,15 +142,20 @@ function MessageInput({
 
       {/* Edit Preview */}
       {isEditing && (
-        <div className="p-2 px-3 rounded bg-yellow-800 bg-opacity-20 text-sm text-white flex justify-between items-center border border-yellow-600">
-          <span>Editing message...</span>
+        <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+          <div className="flex-1">
+            <span className="text-xs text-yellow-400 font-medium">
+              Editing message...
+            </span>
+            <p className="text-sm text-gray-300 truncate">{text}</p>
+          </div>
           <button
             onClick={() => {
               setMessageToEdit(null);
               setIsEditing(false);
               setText("");
             }}
-            className="text-red-400 hover:text-red-500 transition"
+            className="p-1 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -163,37 +164,17 @@ function MessageInput({
 
       {/* Upload Progress */}
       {uploadProgress > 0 && (
-        <div className="w-full bg-gray-700 rounded h-5 relative overflow-hidden">
+        <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
           <div
-            className="bg-blue-500 h-full rounded transition-all duration-300"
+            className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-300"
             style={{ width: `${uploadProgress}%` }}
           />
-          <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold">
-            {uploadProgress}%
-          </span>
         </div>
       )}
 
       {/* Input Area */}
-      <div className="flex items-center gap-2 p-2 bg-gray-900 border border-gray-700 rounded-2xl">
-        <textarea
-          ref={textInputRef}
-          rows={1}
-          className="flex-1 bg-gray-800 text-white placeholder-gray-400 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden"
-          placeholder={isConnected ? "Type a message..." : "Connecting..."}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          disabled={!isConnected}
-          style={{ maxHeight: "150px" }}
-        />
-
-        {/* File Input */}
+      <div className="flex items-end gap-2 p-2 bg-gray-800/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl shadow-lg focus-within:border-blue-500/50 focus-within:shadow-blue-500/10 transition-all duration-300">
+        {/* File Button */}
         <input
           type="file"
           id="fileUpload"
@@ -203,33 +184,67 @@ function MessageInput({
         />
         <label
           htmlFor="fileUpload"
-          className={`cursor-pointer p-2 rounded-full transition ${
+          className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ${
             isConnected
-              ? "text-gray-400 hover:text-white hover:bg-gray-800"
-              : "opacity-50 cursor-not-allowed"
-          }`}
+              ? "text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 cursor-pointer"
+              : "opacity-40 cursor-not-allowed"
+          } ${file ? "text-blue-400 bg-blue-500/10" : ""}`}
           title="Attach file"
         >
           <Paperclip className="w-5 h-5" />
         </label>
 
+        {/* Text Input */}
+        <div className="flex-1 relative">
+          <textarea
+            ref={textInputRef}
+            rows={1}
+            className="w-full bg-transparent text-white placeholder-gray-500 px-2 py-2.5 focus:outline-none resize-none overflow-hidden text-sm"
+            placeholder={
+              isConnected ? "پیام خود را بنویسید..." : "Connecting..."
+            }
+            dir="auto"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            disabled={!isConnected}
+            style={{ maxHeight: "150px" }}
+          />
+        </div>
+
+        {/* File Name Badge */}
+        {file && (
+          <div className="absolute -top-8 left-12 bg-gray-700 text-xs text-gray-300 px-2 py-1 rounded-lg flex items-center gap-1">
+            <Paperclip className="w-3 h-3" />
+            <span className="max-w-[120px] truncate">{file.name}</span>
+            <button
+              onClick={() => setFile(null)}
+              className="text-gray-400 hover:text-red-400 ml-1"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
         {/* Send Button */}
         <button
           onClick={handleSend}
-          disabled={!isConnected || (!text.trim() && !file)}
-          className={`bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full transition ${
-            !isConnected || (!text.trim() && !file)
-              ? "opacity-50 cursor-not-allowed"
-              : "cursor-pointer"
+          disabled={!isConnected || !hasContent}
+          className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300 ${
+            hasContent && isConnected
+              ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-105 cursor-pointer"
+              : "bg-gray-700 text-gray-500 cursor-not-allowed"
           }`}
           title="Send"
         >
           <Send className="w-4 h-4" />
         </button>
       </div>
-
-      {/* File Name */}
-      {file && <div className="text-xs text-gray-300 px-2">📎 {file.name}</div>}
     </div>
   );
 }
