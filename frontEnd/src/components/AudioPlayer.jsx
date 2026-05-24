@@ -18,20 +18,18 @@ export default function AudioPlayer({ fileUrl }) {
       setDuration(audio.duration || 0);
       setIsLoading(false);
     };
-
     const handleTimeUpdate = () => {
       if (!audio.duration) return;
-
       setCurrentTime(audio.currentTime);
       setProgress((audio.currentTime / audio.duration) * 100);
-
       if (audio.buffered.length) {
-        const lastBuffered = audio.buffered.end(audio.buffered.length - 1);
-        setBuffered((lastBuffered / audio.duration) * 100);
+        setBuffered(
+          (audio.buffered.end(audio.buffered.length - 1) / audio.duration) *
+            100,
+        );
       }
       setIsLoading(false);
     };
-
     const handleWaiting = () => setIsLoading(true);
     const handlePlaying = () => setIsLoading(false);
 
@@ -51,7 +49,6 @@ export default function AudioPlayer({ fileUrl }) {
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
-
     if (isPlaying) {
       audio.pause();
       setIsPlaying(false);
@@ -65,7 +62,6 @@ export default function AudioPlayer({ fileUrl }) {
   const handleSeek = (e) => {
     const audio = audioRef.current;
     if (!audio) return;
-
     const seekTime = (e.target.value / 100) * audio.duration;
     audio.currentTime = seekTime;
     setProgress(e.target.value);
@@ -82,15 +78,15 @@ export default function AudioPlayer({ fileUrl }) {
   };
 
   return (
-    <div className="bg-zinc-900 text-white p-2 flex items-center rounded-xl shadow-md w-full">
+    <div className="mt-2 rounded-xl bg-gray-800/50 border border-gray-700/50 p-3 max-w-xl min-w-md w-full shadow-lg">
       <audio ref={audioRef} src={fileUrl} preload="metadata" />
 
-      <div className="flex items-center justify-between gap-4 w-full">
+      <div className="flex items-center gap-3">
         {/* دکمه Play/Pause */}
         <button
           onClick={togglePlay}
-          className="bg-zinc-700 hover:bg-zinc-600 p-2 cursor-pointer rounded-full flex items-center justify-center w-10 h-10 transition"
           disabled={isLoading}
+          className="w-10 h-10 bg-blue-600 hover:bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 transition shadow-lg shadow-blue-500/20 cursor-pointer"
           title={isPlaying ? "Pause" : "Play"}
         >
           {isLoading ? (
@@ -102,28 +98,27 @@ export default function AudioPlayer({ fileUrl }) {
           )}
         </button>
 
-        {/* نوار پیشرفت */}
-        <div className="flex-1">
-          <div className="relative h-2 w-full rounded-md bg-zinc-700 overflow-hidden mb-1">
+        {/* نوار پیشرفت + زمان */}
+        <div className="flex-1 min-w-0">
+          <div
+            className="relative w-full h-1.5 bg-gray-700 rounded-full cursor-pointer group/progress mb-1"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const clickX = e.clientX - rect.left;
+              const pct = (clickX / rect.width) * 100;
+              handleSeek({ target: { value: pct } });
+            }}
+          >
             <div
-              className="absolute top-0 left-0 h-full bg-zinc-500"
+              className="absolute top-0 left-0 h-full bg-gray-500 rounded-full"
               style={{ width: `${buffered}%` }}
             />
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={progress}
-              onChange={handleSeek}
-              className="w-full h-2 opacity-0 z-10 relative cursor-pointer"
-              disabled={isLoading}
-            />
             <div
-              className="absolute top-0 left-0 h-full bg-blue-500 pointer-events-none"
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="text-xs text-gray-300 flex justify-between">
+          <div className="flex justify-between text-[10px] text-gray-400">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -133,10 +128,10 @@ export default function AudioPlayer({ fileUrl }) {
         <a
           href={fileUrl}
           download
-          className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full transition"
+          className="w-8 h-8 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white rounded-full flex items-center justify-center flex-shrink-0 transition cursor-pointer"
           title="Download"
         >
-          <Download className="w-4 h-4" />
+          <Download className="w-3.5 h-3.5" />
         </a>
       </div>
     </div>
