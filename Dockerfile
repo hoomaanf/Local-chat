@@ -2,11 +2,6 @@ FROM node:20-alpine
 
 WORKDIR /app
 LABEL project="local-chat"
-# گواهی‌ها رو بساز
-RUN apk add --no-cache openssl && \
-    openssl req -x509 -newkey rsa:2048 -nodes \
-    -keyout key.pem -out cert.pem -days 365 \
-    -subj "/CN=localhost"
 
 # تنظیم میرور npm ایران
 RUN npm config set registry https://mirror2.chabokan.net/npm/
@@ -21,6 +16,9 @@ RUN cd frontEnd && npm ci
 
 # کپی بقیه فایل‌ها
 COPY . .
+
+# ساخت گواهی
+RUN node gen-cert.js
 
 # پورت‌ها
 EXPOSE 3000 5173 9000
