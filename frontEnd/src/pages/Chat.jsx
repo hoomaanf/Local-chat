@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useSound } from "../hooks/useSound";
 import DateDivider from "../components/DateDivider";
+import TypingIndicator from "../components/TypingIndicator";
 
 function Chat() {
   const { username, serverIp, logout } = useAuth();
@@ -28,6 +29,7 @@ function Chat() {
     logout: wsLogout,
     onlineUsers,
     handleReaction,
+    lastMessage,
   } = useWebSocket();
 
   const {
@@ -52,6 +54,7 @@ function Chat() {
   const [lastSeenMessageId, setLastSeenMessageId] = useState(null);
   const [showOnlineUsers, setShowOnlineUsers] = useState(false);
   const [newMessagesCount, setNewMessagesCount] = useState(0);
+  const [typingUsers, setTypingUsers] = useState([]);
 
   // Refs - همیشه آپدیت
   const isAtBottomRef = useRef(true);
@@ -101,6 +104,20 @@ function Chat() {
       window.removeEventListener("focus", handleVisible);
     };
   }, []);
+
+  useEffect(() => {
+    if (lastMessage?.type === "user_typing") {
+      const { username, isTyping } = lastMessage.data;
+      setTypingUsers((prev) => {
+        if (isTyping) {
+          if (prev.find((u) => u.username === username)) return prev;
+          return [...prev, { username }];
+        } else {
+          return prev.filter((u) => u.username !== username);
+        }
+      });
+    }
+  }, [lastMessage]);
 
   const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current;
@@ -309,7 +326,10 @@ function Chat() {
             </button>
           )}
 
-          <div className="relative z-10 bg-gradient-to-t from-gray-900 via-gray-900/95 to-transparent px-4 pb-4 pt-2">
+          <div className="w-full" dir="auto">
+            <TypingIndicator users={typingUsers} />
+          </div>
+          <div className="relative z-10 bg-gradient-to-t from-gray-900 via-gray-900/95 to-transparent px-4 pb-4 pt-2 ">
             <MessageInput
               scrollBottom={scrollBottom}
               messageToEdit={messageToEdit}

@@ -11,13 +11,15 @@ function MessageInput({
   replyTo,
 }) {
   const { username, serverIp } = useAuth();
-  const { sendMessage, isConnected, handleEditMessage } = useWebSocket();
+  const { sendMessage, isConnected, handleEditMessage, sendTyping } =
+    useWebSocket();
 
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const textInputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
     const handler = () => textInputRef.current?.focus();
@@ -109,6 +111,20 @@ function MessageInput({
       textInputRef.current?.focus();
     }
   }, [replyTo]);
+
+  const handleTyping = () => {
+    sendTyping(true);
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      sendTyping(false);
+    }, 1500);
+  };
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(typingTimeoutRef.current);
+    };
+  }, []);
 
   const hasContent = text.trim() || file;
 
@@ -205,7 +221,7 @@ function MessageInput({
             }
             dir="auto"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => setText(e.target.value, handleTyping())}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();

@@ -26,6 +26,7 @@ export const WebSocketProvider = ({ children }) => {
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const messageHandlers = useRef(new Set());
+  const [lastMessage, setLastMessage] = useState(null);
 
   const connectWebSocket = useCallback(() => {
     if (!username || !serverIp) return;
@@ -57,10 +58,15 @@ export const WebSocketProvider = ({ children }) => {
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+        setLastMessage(message);
 
         switch (message.type) {
           case "initial_messages":
             setMessages(message.data);
+            break;
+
+          case "typing":
+            // هندل توی Chat.jsx
             break;
 
           case "new_message":
@@ -181,6 +187,17 @@ export const WebSocketProvider = ({ children }) => {
     };
   }, [connectWebSocket, username]);
 
+  const sendTyping = (isTyping) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: "typing",
+          data: { username, isTyping },
+        }),
+      );
+    }
+  };
+
   const sendMessage = (messageData) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(
@@ -266,6 +283,8 @@ export const WebSocketProvider = ({ children }) => {
     handleEditMessage,
     handleReaction,
     sendWebSocketMessage,
+    sendTyping,
+    lastMessage,
   };
 
   return (

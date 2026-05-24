@@ -104,6 +104,18 @@ wss.on("connection", (ws) => {
         case "new_message":
           handleNewMessage(ws, message.data);
           break;
+        case "typing":
+          broadcastMessage(
+            {
+              type: "user_typing",
+              data: {
+                username: message.data.username,
+                isTyping: message.data.isTyping,
+              },
+            },
+            ws,
+          );
+          break;
         case "edit_message":
           handleEditMessage(ws, message.data);
           break;
@@ -235,14 +247,15 @@ function handlePeerId(ws, data) {
   broadcastMessage({ type: "peer_update", data: { username, peerId } });
 }
 
-function broadcastMessage(message) {
+function broadcastMessage(message, excludeWs = null) {
   const str = JSON.stringify(message);
   clients.forEach((value) => {
     const ws = value?.ws;
-    if (ws && ws.readyState === WebSocket.OPEN) ws.send(str);
+    if (ws && ws !== excludeWs && ws.readyState === WebSocket.OPEN) {
+      ws.send(str);
+    }
   });
 }
-
 function broadcastUserList() {
   const list = [];
   clients.forEach((value, username) => {
@@ -262,7 +275,7 @@ function generateCode(phoneNumber) {
 // ==================== REST ====================
 
 app.get("/api/ping", (req, res) => {
-  res.json({ staus: "success" }).status(200);
+  res.status(200).json({ status: "success" });
 });
 
 app.post("/api/login", uploadProfile.single("profile"), (req, res) => {
