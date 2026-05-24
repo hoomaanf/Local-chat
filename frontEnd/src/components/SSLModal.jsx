@@ -7,7 +7,7 @@ function SSLModal() {
   const [urlsOk, setUrlsOk] = useState({});
 
   const urlsToCheck = [
-    { name: "Backend", url: `https://${serverIp}:3000/api/messages` },
+    { name: "Backend", url: `https://${serverIp}:3000/` },
     { name: "PeerJS", url: `https://${serverIp}:9000/myapp/peerjs/id` },
     { name: "Frontend", url: `https://${serverIp}:5173` },
   ];

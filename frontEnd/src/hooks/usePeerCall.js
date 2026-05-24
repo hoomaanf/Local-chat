@@ -3,7 +3,7 @@ import Peer from "peerjs";
 import { useWebSocket } from "../context/WebSocketContext";
 
 export function usePeerCall(username, serverIp) {
-  const { sendWebSocketMessage, isConnected } = useWebSocket();
+  const { sendWebSocketMessage, isConnected, lastMessage } = useWebSocket();
   const [peerId, setPeerId] = useState("");
   const [incomingCall, setIncomingCall] = useState(null);
   const [inCall, setInCall] = useState(false);
@@ -15,6 +15,7 @@ export function usePeerCall(username, serverIp) {
   const localStreamRef = useRef(null);
   const audioEnabledRef = useRef(true);
   const sentPeerIdRef = useRef(false);
+  const callPartnerRef = useRef(null);
 
   useEffect(() => {
     if (!isConnected) return;
@@ -67,6 +68,7 @@ export function usePeerCall(username, serverIp) {
           setRemoteStream(null);
         });
 
+        callPartnerRef.current = targetPeerId;
         setInCall(true);
         setCallPartner(targetPeerId);
       } catch (e) {
@@ -92,6 +94,7 @@ export function usePeerCall(username, serverIp) {
         setRemoteStream(null);
       });
 
+      callPartnerRef.current = incomingCall.peer;
       setInCall(true);
       setCallPartner(incomingCall.peer);
       setIncomingCall(null);
@@ -112,15 +115,45 @@ export function usePeerCall(username, serverIp) {
     }
   }, [incomingCall]);
 
+  // دریافت call_hangup از طرف مقابل
+  useEffect(() => {
+    if (lastMessage?.type === "call_hangup") {
+      // بستن incomingCall (اگه هنوز answer نشده)
+      if (incomingCall) {
+        incomingCall.close();
+        setIncomingCall(null);
+      }
+
+      // بستن تماس جاری (اگه در حال مکالمه‌ست)
+      if (inCall) {
+        currentCallRef.current?.close();
+        localStreamRef.current?.getTracks().forEach((t) => t.stop());
+        currentCallRef.current = null;
+        localStreamRef.current = null;
+        callPartnerRef.current = null;
+        setInCall(false);
+        setRemoteStream(null);
+        setCallPartner(null);
+      }
+    }
+  }, [lastMessage]);
+
   const hangup = useCallback(() => {
+    // به receiver خبر بده (با Peer ID)
+    sendWebSocketMessage("call_hangup", {
+      to: callPartnerRef.current, // ← Peer ID طرف مقابل
+      from: peerRef.current?.id, // ← Peer ID خودم
+    });
+
     currentCallRef.current?.close();
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     currentCallRef.current = null;
     localStreamRef.current = null;
+    callPartnerRef.current = null;
     setInCall(false);
     setRemoteStream(null);
     setCallPartner(null);
-  }, []);
+  }, [sendWebSocketMessage]);
 
   const toggleAudio = useCallback(() => {
     const track = localStreamRef.current?.getAudioTracks()[0];

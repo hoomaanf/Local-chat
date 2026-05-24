@@ -116,6 +116,9 @@ wss.on("connection", (ws) => {
             ws,
           );
           break;
+        case "call_hangup":
+          broadcastMessage({ type: "call_hangup", data: message.data }, ws);
+          break;
         case "edit_message":
           handleEditMessage(ws, message.data);
           break;
