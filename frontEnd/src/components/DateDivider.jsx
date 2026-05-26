@@ -48,7 +48,10 @@ function DateDivider({ date }) {
   return (
     <div className="flex items-center gap-3 my-4">
       <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-600 to-gray-500" />
-      <span className="text-xs text-gray-500 font-medium whitespace-nowrap px-3 py-1 bg-gray-800/50 rounded-full border border-gray-700/50">
+      <span
+        className="text-xs text-gray-500 font-medium whitespace-nowrap px-3 py-1 bg-gray-800/50 rounded-full border border-gray-700/50"
+        dir="auto"
+      >
         {formatDateLabel(date)}
       </span>
       <div className="flex-1 h-px bg-gradient-to-l from-transparent via-gray-600 to-gray-500" />

@@ -134,7 +134,7 @@ function MessageInput({
       {!isConnected && (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-xs text-yellow-400">
           <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-          Connecting to server...
+          در حال اتصال ...
         </div>
       )}
 
@@ -142,8 +142,8 @@ function MessageInput({
       {replyTo && (
         <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-xl">
           <div className="flex-1 min-w-0">
-            <span className="text-xs text-blue-400 font-medium">
-              Reply to {replyTo.username}
+            <span className="text-xs text-blue-400 font-medium" dir="auto">
+              پاسخ به {replyTo.username}
             </span>
             <p className="text-sm text-gray-300 truncate">{replyTo.text}</p>
           </div>
@@ -161,7 +161,7 @@ function MessageInput({
         <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
           <div className="flex-1">
             <span className="text-xs text-yellow-400 font-medium">
-              Editing message...
+              ویرایش پیام ...
             </span>
             <p className="text-sm text-gray-300 truncate">{text}</p>
           </div>

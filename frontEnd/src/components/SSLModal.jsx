@@ -48,7 +48,7 @@ function SSLModal() {
           </h2>
         </div>
 
-        <p className="text-gray-300 text-sm mb-6">
+        <p className="text-gray-300 text-sm mb-6" dir="auto">
           برای استفاده از تماس صوتی و چت، باید گواهی‌های امنیتی زیر رو تأیید
           کنی. روی هر لینک کلیک کن و <strong>Accept Risk</strong> رو بزن.
         </p>
@@ -79,7 +79,7 @@ function SSLModal() {
           onClick={checkAllUrls}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition"
         >
-          Done, Check Again
+          بررسی
         </button>
       </div>
     </div>

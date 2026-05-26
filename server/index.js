@@ -236,7 +236,7 @@ function handleDeleteMessage(ws, data) {
 function handleLogout(ws, data) {
   const existing = clients.get(data.username);
   if (existing) {
-    existing.ws = null; // فقط ws رو خالی کن
+    existing.ws = null;
   }
   broadcastUserList();
 }
@@ -262,7 +262,7 @@ function broadcastMessage(message, excludeWs = null) {
 function broadcastUserList() {
   const list = [];
   clients.forEach((value, username) => {
-    if (value) {
+    if (value?.ws && value.ws.readyState === WebSocket.OPEN) {
       list.push({ username, peerId: value.peerId || null });
     }
   });
