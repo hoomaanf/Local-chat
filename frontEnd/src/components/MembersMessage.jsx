@@ -29,7 +29,6 @@ function MembersMessage({
   const { username } = useAuth();
   const [showReactionBox, setShowReactionBox] = useState(false);
   const reactionBoxRef = useRef(null);
-  const jDate = toJalaali(new Date(member.date));
   const repliedMessage = member.replyToId
     ? allMessages.find((msg) => msg.id === member.replyToId)
     : null;
@@ -145,8 +144,8 @@ function MembersMessage({
           <div className="relative flex items-center" ref={reactionBoxRef}>
             <button
               onClick={() => setShowReactionBox((prev) => !prev)}
-              className="text-gray-500 hover:text-yellow-400 transition flex items-center justify-center w-5 h-5"
-              title="Add reaction"
+              className="text-gray-500 hover:text-yellow-400 transition flex items-center justify-center w-5 h-5 cursor-pointer"
+              title="افزودن ریکشن"
             >
               <Smile className="w-4 h-4" />
             </button>
