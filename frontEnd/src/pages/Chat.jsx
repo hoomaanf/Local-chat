@@ -56,7 +56,6 @@ function Chat() {
   const [newMessagesCount, setNewMessagesCount] = useState(0);
   const [typingUsers, setTypingUsers] = useState([]);
 
-  // Refs - همیشه آپدیت
   const isAtBottomRef = useRef(true);
   const isPageVisibleRef = useRef(true);
   const messagesRef = useRef([]);
@@ -70,7 +69,6 @@ function Chat() {
     messagesRef.current = messages;
   }, [messages]);
 
-  // unlock audio
   useEffect(() => {
     const unlock = () => {
       new Audio().play().catch(() => {});
@@ -79,7 +77,6 @@ function Chat() {
     document.addEventListener("click", unlock);
   }, []);
 
-  // Visibility + blur/focus
   useEffect(() => {
     const handleHidden = () => {
       isPageVisibleRef.current = false;
@@ -144,14 +141,12 @@ function Chat() {
     return () => container.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
-  // اسکرول خودکار
   useEffect(() => {
     if (isAtBottom) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isAtBottom]);
 
-  // نوتیفیکیشن + صدا
   useEffect(() => {
     const msgs = messagesRef.current;
     if (msgs.length === 0) return;
@@ -160,12 +155,10 @@ function Chat() {
 
     if (lastMsg.username !== username) {
       if (!isPageVisibleRef.current) {
-        // تب فوکوس نیست → نوتیفیکیشن + صدا
         play("newMessage");
-        showNotification(lastMsg.username, lastMsg.text || "📎 فایل");
+        showNotification(lastMsg.username, lastMsg.text || "فایل");
         setNewMessagesCount((prev) => prev + 1);
       } else if (!isAtBottomRef.current) {
-        // فوکوس هست ولی پایین نیست → فقط صدا
         play("newMessage");
         setNewMessagesCount((prev) => prev + 1);
       }
@@ -174,7 +167,17 @@ function Chat() {
     }
   }, [messages, username, play, scrollBottom]);
 
-  // زنگ تماس
+  useEffect(() => {
+    if (incomingCall && !isPageVisibleRef.current) {
+      const callerPeerId = incomingCall.peer;
+      const callerUser = onlineUsers.find((u) => {
+        return u.peerId === callerPeerId;
+      });
+      const callerName = callerUser?.username || "ناشناس";
+      showNotification("تماس ورودی", `${callerName} داره زنگ میزنه!`);
+    }
+  }, [incomingCall]);
+
   useEffect(() => {
     if (incomingCall) {
       play("incomingCall", true);
