@@ -10,16 +10,27 @@ A real-time chat + voice calling application that runs entirely on your local ne
 
 Feature Description
 💬 Text Chat Send, edit, delete, reply, and react to messages
+
 📎 File Sharing Upload images, videos, audio, PDFs, and more
+
 📞 Voice Calls Peer-to-peer audio calls via WebRTC (PeerJS)
+
 👥 Online Users List See who's online and call them directly
+
 🎙️ Mute/Unmute Toggle microphone during calls
+
 😀 Emoji Reactions Add/remove reactions on messages (like Telegram)
+
 🎨 Glassmorphism UI Modern gradient design with glass effects
+
 📅 Date Dividers "Today", "Yesterday", and date separators
+
 🔔 Sound Notifications Audio alert for new messages & incoming calls
+
 🔔 Desktop Notifications Browser notifications when tab is inactive
+
 🛡️ SSL Support Self-signed certificates for secure media access
+
 🐳 Docker Ready Single command deployment
 
 ---
