@@ -4,7 +4,7 @@ WORKDIR /app
 LABEL project="local-chat"
 
 # تنظیم میرور npm ایران
-RUN npm config set registry https://mirror2.chabokan.net/npm/
+# RUN npm config set registry https://mirror2.chabokan.net/npm/
 
 # بک‌اند
 COPY server/package.json server/package-lock.json ./server/
