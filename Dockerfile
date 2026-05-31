@@ -39,8 +39,10 @@ COPY server/package.json server/package-lock.json ./server/
 RUN cd server && npm ci --omit=dev
 
 # فرانت
-COPY frontEnd/package.json frontEnd/package-lock.json ./frontEnd/
-RUN cd frontEnd && npm ci
+# COPY frontEnd/package.json frontEnd/package-lock.json ./frontEnd/
+# RUN cd frontEnd && npm ci
+COPY frontEnd/package.json ./frontEnd/
+RUN cd frontEnd && npm install
 
 # کپی بقیه فایل‌ها
 COPY . .
